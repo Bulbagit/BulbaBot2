@@ -22,7 +22,6 @@ module.exports = {
                 const match = message.content.match(linkRegex);
                 const searchText = match[1];
                 const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=opensearch&search=${encodeURI(searchText.replace(/ /g, '_'))}&redirects=resolve&format=json`;
-                let response = await needle('get', url); 
                 try {
                     let response = await needle('get', url);
                     if (response.statusCode === 200) {
