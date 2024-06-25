@@ -8,6 +8,7 @@ const Blacklist = require("../includes/sqlBlacklist.js");
 const ModLogs = require("../includes/sqlModLogs.js");
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
+const needle = require('needle')
 
 module.exports = {
     name: Events.MessageCreate,
@@ -16,12 +17,30 @@ module.exports = {
             return;
 
         // Link to wiki when using [[...]]
-        const linkRegex = /\[\[(.*?)\]\]/;
-        if (linkRegex.test(message.content.toLowerCase())) {
-            const match = message.content.match(linkRegex);
-            const searchText = match[1];
-            return message.reply(`https://bulbapedia.bulbagarden.net/wiki/${encodeURIComponent(searchText)}`);
-        }
+            const linkRegex = /\[\[(.*?)\]\]/;
+            if (linkRegex.test(message.content.toLowerCase())) {
+                const match = message.content.match(linkRegex);
+                const searchText = match[1];
+                const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=opensearch&search=${encodeURI(searchText.replace(/ /g, '_'))}&redirects=resolve&format=json`;
+                let response = await needle('get', url); 
+                try {
+                    let response = await needle('get', url);
+                    if (response.statusCode === 200) {
+                        let data = response.body;
+                        if (data[3] && data[3].length > 0) {
+                            const firstLink = data[3][0];
+                            return message.reply(firstLink);
+                        } else {
+                            return message.reply("No results found. Ensure you haven't made any typos or if the page exists!");
+                        }
+                    } else {
+                        return message.reply("Failed to fetch data from Bulbapedia. Please contact @BulbaTech!");
+                    }
+                } catch (error) {
+                    console.error(error);
+                    return message.reply("An error occurred while fetching data. Please contact @BulbaTech!");
+                }
+            }
 
         //Disable invites
         const logsChannel = message.guild.channels.resolve(logChannel)
