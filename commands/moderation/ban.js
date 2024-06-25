@@ -33,12 +33,25 @@ module.exports = {
         .addUserOption(user =>
             user.setName('user')
                 .setDescription('The offending user or their ID')
-                .setRequired(true)),
+                .setRequired(true))
+        .addStringOption(purgehours =>
+            purgehours.setName('purgehours')
+                .setDescription('If supplied, purge last X hours worth of messages')
+                .setRequired(false))
+        ,
     async execute(interaction) {
         const reason = interaction.options.getString("reason");
         let user = interaction.options.getUser("user");
         const member = await interaction.client.users.fetch(user);
         const isInServer = await interaction.guild.members.resolve(user);
+        let purgeHoursStr = interaction.options.getString("purgehours");
+
+        let purgeSeconds = 0;
+
+        if (!isNaN(purgeHoursStr)) {
+            purgeSeconds = Number(purgeHoursStr) * 60 * 60;
+        }
+
         if (isInServer){
             const modRole = await interaction.guild.roles.fetch(modID);
             if (!interaction.member.roles.cache.has(modID) && !interaction.user.id !== adminID && interaction.member.roles.highest.position < modRole.position) {
@@ -81,7 +94,8 @@ module.exports = {
             content: message
         })
             .then(() => {
-                interaction.guild.members.ban(member, {reason: reason}).then(async () => {
+
+                interaction.guild.members.ban(member, {reason: reason, deleteMessageSeconds: purgeSeconds }).then(async () => {
                     const channel = await interaction.client.channels.fetch(logChannel);
                     const response = new EmbedBuilder()
                         .setColor(messageColors.memBan)
