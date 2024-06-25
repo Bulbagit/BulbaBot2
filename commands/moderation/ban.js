@@ -97,10 +97,16 @@ module.exports = {
 
                 interaction.guild.members.ban(member, {reason: reason, deleteMessageSeconds: purgeSeconds }).then(async () => {
                     const channel = await interaction.client.channels.fetch(logChannel);
+                    let lBanDescr = `Member @${member.username} has been banned from the server by @${interaction.user.username}.`;
+
+                    if (purgeSeconds > 0) {
+                        lBanDescr = lBanDescr + " (Purged messages for " + purgeHoursStr + " hour(s).)";
+                    }
+
                     const response = new EmbedBuilder()
                         .setColor(messageColors.memBan)
                         .setTitle("Member banned")
-                        .setDescription(`Member @${member.username} has been banned from the server by @${interaction.user.username}.`)
+                        .setDescription(lBanDescr)
                         .addFields([{name: "Reason", value: reason}])
                         .setTimestamp();
                     channel.send({embeds: [response]});
