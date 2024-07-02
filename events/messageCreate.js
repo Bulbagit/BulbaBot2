@@ -39,7 +39,7 @@ module.exports = {
                     console.error(error);
                     return message.reply("An error occurred while fetching data. Please contact @BulbaTech!");
                 }
-            }
+            };
 
         //Disable invites
         const logsChannel = message.guild.channels.resolve(logChannel)
