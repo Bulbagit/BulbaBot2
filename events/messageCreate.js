@@ -8,7 +8,7 @@ const Blacklist = require("../includes/sqlBlacklist.js");
 const ModLogs = require("../includes/sqlModLogs.js");
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
-const needle = require('needle');
+const needle = require('needle')
 
 module.exports = {
     name: Events.MessageCreate,
@@ -17,29 +17,29 @@ module.exports = {
             return;
 
         // Link to wiki when using [[...]]
-            const linkRegex = /\[\[(.*?)\]\]/;
-            if (linkRegex.test(message.content.toLowerCase())) {
-                const match = message.content.match(linkRegex);
-                const searchText = match[1];
-                const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=opensearch&search=${encodeURI(searchText.replace(/ /g, '_'))}&redirects=resolve&format=json`;
-                try {
-                    let response = await needle('get', url);
-                    if (response.statusCode === 200) {
-                        let data = response.body;
-                        if (data[3] && data[3].length > 0) {
-                            const firstLink = data[3][0];
-                            return message.reply(firstLink);
+        const linkRegex = /\[\[(.*?)\]\]/;
+        if (linkRegex.test(message.content.toLowerCase())) {
+            const match = message.content.match(linkRegex);
+            const searchText = match[1];
+            const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=query&list=search&srsearch=${encodeURI(searchText.replace(/ /g, '_'))}&format=json`;
+            try {
+                let response = await needle('get', url);
+                if (response.statusCode === 200) {
+                    let data = response.body;
+                    if (data["query"]["search"][0]["title"] && data["query"]["search"][0]["title"].length > 0) {
+                        const firstLink = data["query"]["search"][0]["title"];
+                        if (firstLink == searchText) {
+                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + searchText);
                         } else {
-                            return message.reply("No results found. Ensure you haven't made any typos or if the page exists!");
+                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + firstLink.replace(/ /g, '_'));
                         }
-                    } else {
-                        return message.reply("Failed to fetch data from Bulbapedia. Please contact @BulbaTech!");
                     }
-                } catch (error) {
-                    console.error(error);
-                    return message.reply("An error occurred while fetching data. Please contact @BulbaTech!");
                 }
+            } catch (error) {
+                console.error(error);
+                return message.reply("An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please ping BulbaTech.");
             }
+        }
 
         //Disable invites
         const logsChannel = message.guild.channels.resolve(logChannel)
