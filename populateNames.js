@@ -1,7 +1,7 @@
 // Migration that will populate the names into the ModLogs table
-const {Client, GatewayIntentBits} = require('discord.js');
-const {token, guildID} = require('config.json');
-const ModLogs = require('includes/sqlModLogs.js');
+import { guildID, token } from 'config.json';
+import { Client, GatewayIntentBits } from 'discord.js';
+import { findAll } from 'includes/sqlModLogs.js';
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -13,7 +13,7 @@ const client = new Client({
     ]
 });
 
-const warnings = await ModLogs.findAll();
+const warnings = await findAll();
 
 warnings.forEach(async warning => {
     const userID = warning.getDataValue('loggedID').toString();

@@ -1,4 +1,16 @@
+# dependencies
 /node_modules/
 /test/
-config.json
 /.idea/
+/bulbabot-db/
+
+# lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+# environment variables
+.env
+config.json
+config.js

@@ -1,0 +1,50 @@
+/**
+ * Same thing as the config.json, but it's an actual JS object
+ */
+const config = {
+  adminID: "",
+  clientID: "",
+  updateAvatar: "",
+  guildID: "",
+  token: "",
+  database: "",
+  dbhost: "",
+  dbuser: "",
+  dbpass: "",
+  archiveID: "",
+  logChannel: "",
+  reportChannel: "",
+  modID: "",
+  muteID: "",
+  noInvites: "false",
+  mentionLimit: "false",
+  ignores: {
+    command: "",
+  },
+  messageColors: {
+    startup: "#7d7c7a",
+    memJoin: "#4e782b",
+    memLeave: "#c2595a",
+    memWarn: "#7c7c7c",
+    memMute: "#ecd6ad",
+    memUnmute: "#2ec46e",
+    memKick: "#f60202",
+    memBan: "#7b0202",
+    memUnban: "#027b02",
+    memLogs: "#03fcd3",
+    commandHelp: "#ffcd42",
+    warnClear: "#11f20a",
+    messageEdit: "#618fe1",
+    messageDelete: "#f69f02",
+    chanStash: "#0a1df2",
+    chanPop: "#f20ab4",
+    misuseWarn: "#fcba03",
+    error: "#ff0019",
+    confirm: "#0af2bc",
+    ignore: "#cc2b43",
+    success: "#1cba00",
+    whois: "#ffffff",
+  },
+};
+
+export default config;

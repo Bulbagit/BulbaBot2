@@ -1,57 +1,86 @@
+// @ts-check
 /**
  * BulbaBot entry point
  * @author Justin Folvarcik
  * @version 2.0
  *
  */
-const fs = require('node:fs');
-const path = require('node:path');
-const {Client, Collection, Events, GatewayIntentBits} = require('discord.js');
-const {token} = require('./config.json');
+import { Client, Collection, GatewayIntentBits } from "discord.js";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import path from "path";
+import config from "./config.js";
 
 // Register commands
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildPresences,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers
-    ]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildPresences,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+  ],
 });
 
-client.commands = new Collection();
-const foldersPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-for (const folder of commandFolders) {
-    const commandsPath = path.join(foldersPath, folder);
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+client.commands = new Collection();
+const foldersPath = join(__dirname, "commands");
+const commandFolders = readdirSync(foldersPath);
+
+async function loadCommands() {
+  for (const folder of commandFolders) {
+    const commandsPath = join(foldersPath, folder);
+    const commandFiles = readdirSync(commandsPath).filter((file) =>
+      file.endsWith(".js")
+    );
+
     for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
+      const filePath = join(commandsPath, file);
+
+      try {
+        const command = await import(filePath);
+
+        if ("data" in command && "execute" in command) {
+          client.commands.set(command.data.name, command);
         } else {
-            console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+          console.log(
+            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+          );
         }
+      } catch (err) {
+        console.error(
+          "Error when loading command at",
+          filePath,
+          " - error:",
+          err
+        );
+      }
     }
+  }
 }
 
+loadCommands().catch(console.error);
 
 // Register event handlers
-const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+const eventsPath = join(__dirname, "events");
+const eventFiles = readdirSync(eventsPath).filter((file) =>
+  file.endsWith(".js")
+);
 
 for (const file of eventFiles) {
-    const filePath = path.join(eventsPath, file);
-    const event = require(filePath);
+  const filePath = join(eventsPath, file);
+
+  import(filePath).then((event) => {
     if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args));
+      client.once(event.name, (...args) => event.execute(...args));
     } else {
-        client.on(event.name, (...args) => event.execute(...args));
+      client.on(event.name, (...args) => event.execute(...args));
     }
+  });
 }
 
-client.login(token);
+client.login(config.token);
