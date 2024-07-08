@@ -21,7 +21,7 @@ module.exports = {
         if (linkRegex.test(message.content.toLowerCase())) {
             const match = message.content.match(linkRegex);
             const searchText = match[1];
-            const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=query&list=search&srsearch=${encodeURI(searchText.replace(/ /g, '_'))}&srsort=just_match&format=json`;
+            const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=query&list=search&srsearch=${encodeURI(searchText.replace(/ /g, '_'))}&format=json`;
             try {
                 let response = await needle('get', url);
                 if (response.statusCode === 200) {
@@ -29,7 +29,7 @@ module.exports = {
                     if (data["query"]["search"][0]["title"] && data["query"]["search"][0]["title"].length > 0) {
                         const firstLink = data["query"]["search"][0]["title"];
                         if (firstLink == searchText) {
-                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + searchText.replace(/ /g, '_'));
+                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + searchText);
                         } else {
                             return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + firstLink.replace(/ /g, '_'));
                         }
