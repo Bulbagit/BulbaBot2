@@ -37,7 +37,7 @@ module.exports = {
                 }
             } catch (error) {
                 console.error(error);
-                return message.reply("An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please ping BulbaTech.");
+                return message.reply("An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please report on #server-feeedback.");
             }
         }
 
