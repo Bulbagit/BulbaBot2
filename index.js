@@ -8,7 +8,7 @@
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "path";
 import config from "./config.js";
 
@@ -39,7 +39,8 @@ async function loadCommands() {
     );
 
     for (const file of commandFiles) {
-      const filePath = join(commandsPath, file);
+      let filePath = join(commandsPath, file);
+      filePath = pathToFileURL(filePath).href;
 
       try {
         const command = await import(filePath);

@@ -1,8 +1,6 @@
-version: "3.8"
-
 services:
   db:
-    image: mysql/mysql-server:latest
+    image: mysql:lts
     container_name: bulba-mysql
     restart: always
     environment:
@@ -14,4 +12,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./bulbabot-db:/var/lib/mysql
+      - bulbabot-db:/var/lib/mysql
+
+volumes:
+  bulbabot-db:
