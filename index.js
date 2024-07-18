@@ -39,8 +39,7 @@ async function loadCommands() {
     );
 
     for (const file of commandFiles) {
-      let filePath = join(commandsPath, file);
-      filePath = pathToFileURL(filePath).href;
+      let filePath = pathToFileURL(join(commandsPath, file)).href;
 
       try {
         const command = await import(filePath);

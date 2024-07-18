@@ -4,18 +4,21 @@
  * Commands should only be deployed globally once all testing is completed.
  */
 import { REST, Routes } from "discord.js";
-//
 import { readdirSync } from "node:fs";
-import { join } from "node:path";
-// import config from "./config.json" assert { type: "json" };
+import path, { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import config from "./config.js";
 
 const commands = [];
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // All commands should be placed in appropriate directories under the ./commands directory
 const foldersPath = join(__dirname, "commands");
 const commandFolders = readdirSync(foldersPath);
+
 for (const folder of commandFolders) {
-  const commandsPath = join(foldersPath, folder);
+  const commandsPath = pathToFileURL(join(foldersPath, folder)).href;
   const commandFiles = readdirSync(commandsPath).filter((file) =>
     file.endsWith(".js")
   );
