@@ -16,5 +16,10 @@
     "needle": "^3.3.1",
     "sequelize": "^6.30.0",
     "sqlite3": "^5.1.6"
+  },
+  "imports": {
+    "@commands/*": "./commands",
+    "@events/*": "./events",
+    "@includes": "./includes"
   }
 }

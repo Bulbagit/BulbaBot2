@@ -2,6 +2,7 @@
 /node_modules/
 /test/
 /.idea/
+/.vscode/
 /bulbabot-db/
 
 # lockfiles

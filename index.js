@@ -5,10 +5,9 @@
  * @version 2.0
  *
  */
-import { Client, Collection, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "path";
 import config from "./config.js";
 
@@ -24,63 +23,44 @@ const client = new Client({
   ],
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const paths = {
+  commands: "./commands",
+  events: "./events",
+};
 
-client.commands = new Collection();
-const foldersPath = join(__dirname, "commands");
-const commandFolders = readdirSync(foldersPath);
-
-async function loadCommands() {
-  for (const folder of commandFolders) {
-    const commandsPath = join(foldersPath, folder);
-    const commandFiles = readdirSync(commandsPath).filter((file) =>
-      file.endsWith(".js")
-    );
-
-    for (const file of commandFiles) {
-      let filePath = pathToFileURL(join(commandsPath, file)).href;
-
-      try {
-        const command = await import(filePath);
-
-        if ("data" in command && "execute" in command) {
-          client.commands.set(command.data.name, command);
-        } else {
-          console.log(
-            `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
-          );
-        }
-      } catch (err) {
-        console.error(
-          "Error when loading command at",
-          filePath,
-          " - error:",
-          err
-        );
-      }
-    }
-  }
-}
-
-loadCommands().catch(console.error);
-
-// Register event handlers
-const eventsPath = join(__dirname, "events");
-const eventFiles = readdirSync(eventsPath).filter((file) =>
+const commands = readdirSync(paths.commands).filter((file) =>
   file.endsWith(".js")
 );
 
-for (const file of eventFiles) {
-  const filePath = join(eventsPath, file);
+for (const command of commands) {
+  const filePath = path.dirname(join(paths.commands, command));
 
-  import(filePath).then((event) => {
-    if (event.once) {
-      client.once(event.name, (...args) => event.execute(...args));
+  try {
+    const { default: command } = await import(filePath);
+
+    if ("data" in command && "execute" in command) {
+      client.commands.set(command.data.name, command);
     } else {
-      client.on(event.name, (...args) => event.execute(...args));
+      console.log(
+        `[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`
+      );
     }
-  });
+  } catch (err) {
+    console.error("Error when loading command at", filePath, " - error:", err);
+  }
+}
+
+// Register event handlers
+const events = readdirSync(paths.events).filter((file) => file.endsWith(".js"));
+
+for (const event of events) {
+  const filePath = await import(`./events/${event}`);
+
+  if (filePath.once) {
+    client.once(filePath.name, (...args) => filePath.execute(...args));
+  } else {
+    client.on(filePath.name, (...args) => filePath.execute(...args));
+  }
 }
 
 client.login(config.token);

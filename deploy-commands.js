@@ -10,22 +10,32 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import config from "./config.js";
 
 const commands = [];
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 // All commands should be placed in appropriate directories under the ./commands directory
-const foldersPath = join(__dirname, "commands");
-const commandFolders = readdirSync(foldersPath);
+// const foldersPath = join(__dirname, "commands");
+// const commandFolders = readdirSync(foldersPath);
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const commandsPath = path.win32.dirname(__dirname, "commands");
+const commandFiles = readdirSync(commandsPath).filter((file) =>
+  file.endsWith(".js")
+);
 
-for (const folder of commandFolders) {
-  const commandsPath = pathToFileURL(join(foldersPath, folder)).href;
-  const commandFiles = readdirSync(commandsPath).filter((file) =>
-    file.endsWith(".js")
-  );
-  for (const file of commandFiles) {
-    const command = require(`./commands/${folder}/${file}`);
-    commands.push(command.data.toJSON());
-  }
+for (const file of commandFiles) {
+  // const commandsPath = pathToFileURL(join(foldersPath, folder)).href;
+  // const commandFiles = readdirSync(commandsPath).filter((file) =>
+  //   file.endsWith(".js")
+  // );
+  // for (const file of commandFiles) {
+  //   const command = require(`./commands/${folder}/${file}`);
+  //   commands.push(command.data.toJSON());
+  // }
+
+  const filePath = path.dirname(join(commandsPath, file));
+  const { default: command } = await import(filePath);
+
+  commands.push(command.data.toJSON());
 }
 
 // Construct and prepare an instance of the REST module
