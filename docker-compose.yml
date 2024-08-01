@@ -1,0 +1,18 @@
+services:
+  db:
+    image: mysql:lts
+    container_name: bulba-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "mysql"
+      MYSQL_DATABASE: "bulbabot"
+      MYSQL_USER: "bulbasaur"
+      MYSQL_PASSWORD: "bulbasaur"
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      - bulbabot-db:/var/lib/mysql
+
+volumes:
+  bulbabot-db:

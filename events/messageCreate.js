@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * This handler fires whenever any message is sent.
  * It is used to check message contents, as well as enforce filters.

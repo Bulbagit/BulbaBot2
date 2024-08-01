@@ -1,36 +1,39 @@
+// @ts-check
 /**
  * Event handler for logging deleted messages.
  */
-const {Events, EmbedBuilder} = require('discord.js');
-const {logChannel, guildID, messageColors} = require('../config.json');
+import { EmbedBuilder, Events } from "discord.js";
+import config from "../config.js";
 
-module.exports = {
-    name: Events.GuildMemberUpdate,
-    async execute(member, newmember) {
-        const logsChannel = await member.guild.channels.fetch(logChannel);
+export const name = Events.GuildMemberUpdate;
+export async function execute(member, newmember) {
+  const logsChannel = await member.guild.channels.fetch(config.logChannel);
 
-        let displaymsg = "";
+  let displaymsg = "";
 
-        if (member.nickname == null) {
-            displaymsg = "Member nickname updated to " + newmember.nickname;
-        }
-        else if (newmember.nickname == null) {
-            displaymsg = "Member nickname removed (was " + member.nickname + ")";
-        }
-        else {
-            displaymsg = "Member nickname updated from " + member.nickname + " to " + newmember.nickname;
-        }
+  if (member.nickname == null) {
+    displaymsg = "Member nickname updated to " + newmember.nickname;
+  } else if (newmember.nickname == null) {
+    displaymsg = "Member nickname removed (was " + member.nickname + ")";
+  } else {
+    displaymsg =
+      "Member nickname updated from " +
+      member.nickname +
+      " to " +
+      newmember.nickname;
+  }
 
-        if (member.nickname != newmember.nickname) {
-            const response = new EmbedBuilder()
-                .setColor(messageColors.memJoin)
-                .setTitle(`Member Updated`)
-                .setThumbnail(member.user.displayAvatarURL())
-                .setDescription(displaymsg)
-                .setFooter({text: `ID: ${member.id}`})
-                .addFields([{name: 'User', value: `${member.user.username}`}])
-                .setTimestamp();
-            return logsChannel.send({embeds: [response]}).catch(err => console.log(err));
-        }
-    }
+  if (member.nickname != newmember.nickname) {
+    const response = new EmbedBuilder()
+      .setColor(config.messageColors.memJoin)
+      .setTitle(`Member Updated`)
+      .setThumbnail(member.user.displayAvatarURL())
+      .setDescription(displaymsg)
+      .setFooter({ text: `ID: ${member.id}` })
+      .addFields([{ name: "User", value: `${member.user.username}` }])
+      .setTimestamp();
+    return logsChannel
+      .send({ embeds: [response] })
+      .catch((err) => console.log(err));
+  }
 }

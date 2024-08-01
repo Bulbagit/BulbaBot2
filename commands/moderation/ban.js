@@ -1,174 +1,228 @@
+// @ts-check
 /**
  * Remove a user from the server and prevent them from re-joining.
  */
-const {SlashCommandBuilder, EmbedBuilder} = require('discord.js');
-const {
-    database,
-    dbhost,
-    dbuser,
-    dbpass,
-    messageColors,
-    modID,
-    adminID,
-    guildID,
-    logChannel,
-    clientID
-} = require('../../config.json');
-const Sequelize = require('sequelize');
-const sequelize = new Sequelize(database, dbuser, dbpass, {
-    host: dbhost,
-    dialect: 'mysql',
-    logging: false
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import Sequelize from "sequelize";
+import config from "../../config.js";
+import { ModLogs } from "../../includes/index.js";
+
+const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
+  host: config.dbhost,
+  dialect: "mysql",
+  logging: false,
 });
-const ModLogs = require('../../includes/sqlModLogs.js');
 
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('ban')
-        .setDescription('Remove a user from the server and prevent them from re-joining.')
-        .addStringOption(reason =>
-            reason.setName('reason')
-                .setDescription('Reason for ban.')
-                .setRequired(true))
-        .addUserOption(user =>
-            user.setName('user')
-                .setDescription('The offending user or their ID')
-                .setRequired(true))
-        .addStringOption(purgehours =>
-            purgehours.setName('purgehours')
-                .setDescription('If supplied, purge last X hours worth of messages')
-                .setRequired(false))
-        ,
-    async execute(interaction) {
-        const reason = interaction.options.getString("reason");
-        let user = interaction.options.getUser("user");
-        const member = await interaction.client.users.fetch(user);
-        const isInServer = await interaction.guild.members.resolve(user);
-        let purgeHoursStr = interaction.options.getString("purgehours");
+export const data = new SlashCommandBuilder()
+  .setName("ban")
+  .setDescription(
+    "Remove a user from the server and prevent them from re-joining."
+  )
+  .addStringOption((reason) =>
+    reason.setName("reason").setDescription("Reason for ban.").setRequired(true)
+  )
+  .addUserOption((user) =>
+    user
+      .setName("user")
+      .setDescription("The offending user or their ID")
+      .setRequired(true)
+  )
+  .addStringOption((purgehours) =>
+    purgehours
+      .setName("purgehours")
+      .setDescription("If supplied, purge last X hours worth of messages")
+      .setRequired(false)
+  );
+export async function execute(interaction) {
+  const reason = interaction.options.getString("reason");
+  let user = interaction.options.getUser("user");
+  const member = await interaction.client.users.fetch(user);
+  const isInServer = await interaction.guild.members.resolve(user);
+  let purgeHoursStr = interaction.options.getString("purgehours");
 
-        let purgeSeconds = 0;
+  let purgeSeconds = 0;
 
-        if (!isNaN(purgeHoursStr)) {
-            purgeSeconds = Number(purgeHoursStr) * 60 * 60;
+  if (!isNaN(purgeHoursStr)) {
+    purgeSeconds = Number(purgeHoursStr) * 60 * 60;
+  }
+
+  if (isInServer) {
+    const modRole = await interaction.guild.roles.fetch(config.modID);
+    if (
+      !interaction.member.roles.cache.has(config.modID) &&
+      !interaction.user.id !== config.adminID &&
+      interaction.member.roles.highest.position < modRole.position
+    ) {
+      interaction.client.emit(
+        "unauthorized",
+        interaction.client,
+        interaction.user,
+        {
+          command: "ban",
+          details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
         }
+      );
 
-        if (isInServer){
-            const modRole = await interaction.guild.roles.fetch(modID);
-            if (!interaction.member.roles.cache.has(modID) && !interaction.user.id !== adminID && interaction.member.roles.highest.position < modRole.position) {
-                interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-                    command: "ban",
-                    details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`
-                });
-                return interaction.reply("You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban.");
-            }
-            if (isInServer.roles.highest.position >= modRole.position) {
-                interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-                    command: "ban",
-                    details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`
-                });
-                return interaction.reply("The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged.");
-            }
-        }
-
-
-        if (member.id === clientID)
-            return interaction.reply("I can't remove myself from the server.");
-        // Log the ban
-        await sequelize.transaction(() => {
-            return ModLogs.create({
-                loggedID: member.id,
-                loggerID: interaction.user.id,
-                logName: "ban",
-                message: reason
-            })
-        }).catch(err => {
-            // Error. Log it and tell the mod it failed.
-            console.log(err);
-            return interaction.reply(`There was an error logging to database:\n${err}\nPlease inform the bot author.`);
-        });
-
-        const message = `You have been banned from ${interaction.guild.name} by a moderator. The reason provided is as follows:` +
-            `\n${reason}` +
-            `\nPlease be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`
-        member.send({
-            content: message
-        })
-            .then(() => {
-
-                interaction.guild.members.ban(member, {reason: reason, deleteMessageSeconds: purgeSeconds }).then(async () => {
-                    const channel = await interaction.client.channels.fetch(logChannel);
-                    let lBanDescr = `Member @${member.username} has been banned from the server by @${interaction.user.username}.`;
-
-                    if (purgeSeconds > 0) {
-                        lBanDescr = lBanDescr + " (Purged messages for " + purgeHoursStr + " hour(s).)";
-                    }
-
-                    const response = new EmbedBuilder()
-                        .setColor(messageColors.memBan)
-                        .setTitle("Member banned")
-                        .setDescription(lBanDescr)
-                        .addFields([{name: "Reason", value: reason}])
-                        .setTimestamp();
-                    channel.send({embeds: [response]});
-                    return interaction.reply({embeds: [response]});
-                })
-                    .catch(async err => {
-                        console.log(err);
-                        const channel = await interaction.guild.channels.fetch(logChannel);
-                        const response = new EmbedBuilder()
-                            .setColor(messageColors.error)
-                            .setTitle("Error banning user")
-                            .setDescription(`An error occurred while trying to ban @${member.username}. The error is displayed below.`)
-                            .addFields([{
-                                name: "Moderator",
-                                value: `@${interaction.user.username}`
-                            },
-                                {
-                                    name: "Reason",
-                                    value: reason
-                                }
-                            ])
-                            .setTimestamp();
-                        channel.send({embeds: [response]})
-                        return interaction.reply("Ban unsuccessful. Check the logs for more information.");
-                    });
-            })
-            .catch(async err => {
-                console.log(err);
-                const guild = await interaction.client.guilds.fetch(guildID);
-                const channel = await guild.channels.fetch(logChannel);
-                const response = new EmbedBuilder()
-                    .setColor(messageColors.error)
-                    .setTitle("Message Failed")
-                    .setDescription(`Sending ban message to user @${member.username} failed. This is likely a result of their privacy settings.`)
-                    .setTimestamp();
-
-                channel.send({embeds: [response]});
-                interaction.guild.members.ban(member, {reason: reason}).then(async () => {
-                    const response = new EmbedBuilder()
-                        .setColor(messageColors.memBan)
-                        .setTitle("Member banned")
-                        .setDescription(`Member @${member.username} has been removed from the server by @${interaction.user.username}.`)
-                        .addFields([{name: "Reason", value: reason}])
-                        .setTimestamp();
-                    channel.send({embeds: [response]});
-                    return interaction.reply({embeds: [response]});
-                })
-                    .catch(async err => {
-                        console.log(err);
-                        const response = new EmbedBuilder()
-                            .setColor(messageColors.error)
-                            .setTitle("Error banning user")
-                            .setDescription(`An error occurred while trying to ban @${member.username}. The error is displayed below.`)
-                            .addFields({name: "Error", value: err}, {
-                                name: "Moderator",
-                                value: `@${interaction.user.username}`
-                            })
-                            .setTimestamp();
-                        channel.send({embeds: [response]});
-                        return interaction.reply("Ban unsuccessful. Check the logs for more information.");
-                    });
-            });
-
+      return interaction.reply(
+        "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
+      );
     }
+    if (isInServer.roles.highest.position >= modRole.position) {
+      interaction.client.emit(
+        "unauthorized",
+        interaction.client,
+        interaction.user,
+        {
+          command: "ban",
+          details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
+        }
+      );
+
+      return interaction.reply(
+        "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
+      );
+    }
+  }
+
+  if (member.id === config.clientID)
+    return interaction.reply("I can't remove myself from the server.");
+
+  // Log the ban
+  await sequelize
+    .transaction(() => {
+      return ModLogs.create({
+        loggedID: member.id,
+        loggerID: interaction.user.id,
+        logName: "ban",
+        message: reason,
+      });
+    })
+    .catch((err) => {
+      // Error. Log it and tell the mod it failed.
+      console.log(err);
+
+      return interaction.reply(
+        `There was an error logging to database:\n${err}\nPlease inform the bot author.`
+      );
+    });
+
+  const message =
+    `You have been banned from ${interaction.guild.name} by a moderator. The reason provided is as follows:` +
+    `\n${reason}` +
+    `\nPlease be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`;
+
+  member
+    .send({
+      content: message,
+    })
+    .then(() => {
+      interaction.guild.members
+        .ban(member, { reason: reason, deleteMessageSeconds: purgeSeconds })
+        .then(async () => {
+          const channel = await interaction.client.channels.fetch(
+            config.logChannel
+          );
+
+          let lBanDescr = `Member @${member.username} has been banned from the server by @${interaction.user.username}.`;
+
+          if (purgeSeconds > 0) {
+            lBanDescr =
+              lBanDescr +
+              " (Purged messages for " +
+              purgeHoursStr +
+              " hour(s).)";
+          }
+
+          const response = new EmbedBuilder()
+            .setColor(config.messageColors.memBan)
+            .setTitle("Member banned")
+            .setDescription(lBanDescr)
+            .addFields([{ name: "Reason", value: reason }])
+            .setTimestamp();
+          channel.send({ embeds: [response] });
+
+          return interaction.reply({ embeds: [response] });
+        })
+        .catch(async (err) => {
+          console.log(err);
+
+          const channel = await interaction.guild.channels.fetch(
+            config.logChannel
+          );
+          const response = new EmbedBuilder()
+            .setColor(config.messageColors.error)
+            .setTitle("Error banning user")
+            .setDescription(
+              `An error occurred while trying to ban @${member.username}. The error is displayed below.`
+            )
+            .addFields([
+              {
+                name: "Moderator",
+                value: `@${interaction.user.username}`,
+              },
+              {
+                name: "Reason",
+                value: reason,
+              },
+            ])
+            .setTimestamp();
+          channel.send({ embeds: [response] });
+
+          return interaction.reply(
+            "Ban unsuccessful. Check the logs for more information."
+          );
+        });
+    })
+    .catch(async (err) => {
+      console.log(err);
+      const guild = await interaction.client.guilds.fetch(config.guildID);
+      const channel = await guild.channels.fetch(config.logChannel);
+      const response = new EmbedBuilder()
+        .setColor(config.messageColors.error)
+        .setTitle("Message Failed")
+        .setDescription(
+          `Sending ban message to user @${member.username} failed. This is likely a result of their privacy settings.`
+        )
+        .setTimestamp();
+
+      channel.send({ embeds: [response] });
+      interaction.guild.members
+        .ban(member, { reason: reason })
+        .then(async () => {
+          const response = new EmbedBuilder()
+            .setColor(config.messageColors.memBan)
+            .setTitle("Member banned")
+            .setDescription(
+              `Member @${member.username} has been removed from the server by @${interaction.user.username}.`
+            )
+            .addFields([{ name: "Reason", value: reason }])
+            .setTimestamp();
+          channel.send({ embeds: [response] });
+
+          return interaction.reply({ embeds: [response] });
+        })
+        .catch(async (err) => {
+          console.log(err);
+
+          const response = new EmbedBuilder()
+            .setColor(config.messageColors.error)
+            .setTitle("Error banning user")
+            .setDescription(
+              `An error occurred while trying to ban @${member.username}. The error is displayed below.`
+            )
+            .addFields(
+              { name: "Error", value: err },
+              {
+                name: "Moderator",
+                value: `@${interaction.user.username}`,
+              }
+            )
+            .setTimestamp();
+          channel.send({ embeds: [response] });
+
+          return interaction.reply(
+            "Ban unsuccessful. Check the logs for more information."
+          );
+        });
+    });
 }

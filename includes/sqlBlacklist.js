@@ -1,57 +1,60 @@
+// @ts-check
 /*
  * Contains the sequelize class for the blacklist table.
  */
 
+import Sequelize, { Model as _Model, BIGINT, STRING } from "sequelize";
+import config from "../config.js";
 
-const Sequelize = require('sequelize');
-const config = require('../config.json');
 const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-    host: config.dbhost,
-    dialect: "mysql",
-    logging: false
+  host: config.dbhost,
+  dialect: "mysql",
+  logging: false,
 });
 
-const Model = Sequelize.Model;
+const Model = _Model;
 class Blacklist extends Model {}
-Blacklist.init({
+Blacklist.init(
+  {
     id: {
-        type: Sequelize.BIGINT(20),
-        unique: true,
-        primaryKey: true,
-        autoIncrement: true
+      type: BIGINT(20),
+      unique: true,
+      primaryKey: true,
+      autoIncrement: true,
     },
 
     term: {
-        type: Sequelize.STRING,
-        unique: true,
-        allowNull: false
+      type: STRING,
+      unique: true,
+      allowNull: false,
     },
 
     flags: {
-        type: Sequelize.STRING
+      type: STRING,
     },
 
     options: {
-        type: Sequelize.STRING
+      type: STRING,
     },
 
     creator: {
-        type: Sequelize.STRING,
-        allowNull: false
-    }
-
-}, {
+      type: STRING,
+      allowNull: false,
+    },
+  },
+  {
     sequelize,
-    modelName: 'blacklist',
+    modelName: "blacklist",
     // Sequelize will pluralize table names by default
     // For consistency, we stop this behavior
     freezeTableName: true,
     // If this is set to true (default),
     // Sequelize will create columns for time created, time updated, etc.
     // We store the log time already, so this is set to false.
-    timestamps: false
-});
+    timestamps: false,
+  }
+);
 
 Blacklist.sync();
 
-module.exports = Blacklist;
+export default Blacklist;
