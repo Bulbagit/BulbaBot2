@@ -13,32 +13,107 @@ const needle = require('needle');
 module.exports = {
     name: Events.MessageCreate,
     async execute(message) {
-        if (message.guild.id !== guildID || !message.member)
-            return;
+        if (message.author.bot) return;
+        if (message.guild.id !== guildID || !message.member) return;
 
-        // Link to wiki when using [[...]]
-        const linkRegex = /\[\[(.*?)\]\]/;
-        if (linkRegex.test(message.content.toLowerCase())) {
-            const match = message.content.match(linkRegex);
-            const searchText = match[1];
-            const url = `https://bulbapedia.bulbagarden.net/w/api.php?action=query&list=search&srsearch=${encodeURI(searchText.replace(/ /g, '_'))}&format=json`;
-            try {
-                let response = await needle('get', url);
-                if (response.statusCode === 200) {
-                    let data = response.body;
-                    if (data["query"]["search"][0]["title"] && data["query"]["search"][0]["title"].length > 0) {
-                        const firstLink = data["query"]["search"][0]["title"];
-                        if (firstLink == searchText) {
-                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + searchText);
-                        } else {
-                            return message.reply("https://bulbapedia.bulbagarden.net/wiki/" + firstLink.replace(/ /g, '_'));
-                        }
-                    }
+        // Define wiki sources
+        const wikiSources = {
+            'animalcrossing': 'https://nookipedia.com/w/api.php',
+            'arms': 'https://armswiki.org/w/api.php',
+            'bulbapedia': 'https://bulbapedia.bulbagarden.net/w/api.php',
+            'chibirobo': 'https://chibi-robo.wiki/w/api.php',
+            'dragalialost': 'https://dragalialost.wiki/w/api.php',
+            'drawntolife': 'https://drawntolife.wiki/w/api.php',
+            'wikibound': 'https://wikibound.info/w/api.php',
+            'fireemblem': 'https://fireemblemwiki.org/w/api.php',
+            'mutecity': 'https://mutecity.org/w/api.php',
+            'goldensun': 'https://goldensunwiki.net/w/api.php',
+            'kidicarus': 'https://www.kidicaruswiki.org/w/api.php',
+            'wikirby': 'https://wikirby.com/w/api.php',
+            'kingdomhearts': 'https://www.khwiki.com/w/api.php',
+            'kovopedia': 'https://kovopedia.com/w/api.php',
+            'mario': 'https://www.mariowiki.com/w/api.php',
+            'metroid': 'https://www.metroidwiki.org/w/api.php',
+            'mii': 'https://miiwiki.org/w/api.php',
+            'mysterydungeon': 'https://mysterydungeonwiki.com/w/api.php',
+            'niwa': 'https://niwanetwork.org/w/api.php',
+            'pikmin': 'https://www.pikminwiki.com/w/api.php',
+            'pikminfanon': 'https://pikminfanon.com/w/api.php',
+            'rhythmheaven': 'https://rhwiki.net/w/api.php',
+            'smash': 'https://www.ssbwiki.com/w/api.php',
+            'starfox': 'https://starfoxwiki.info/w/api.php',
+            'starfy': 'https://www.starfywiki.org/w/api.php',
+            'splatoon': 'https://splatoonwiki.org/w/api.php',
+            'strategy': 'https://strategywiki.org/w/api.php',
+            'harddrop': 'https://harddrop.com/w/api.php',
+            'ukikipedia': 'https://ukikipedia.net/w/api.php',
+            'wars': 'https://warswiki.org/w/api.php',
+            'xeno': 'https://www.xenoserieswiki.org/w/api.php',
+            'zelda': 'https://zeldawiki.wiki/w/api.php'
+        };
+
+        // Regex to match [[term]] or [[prefix:term]]
+        const linkRegex = /\[\[(?:([a-z]+):)?(.+?)\]\]/i;
+
+        // Match the message against the regex
+        const match = message.content.match(linkRegex);
+        if (!match) return; // If no match, exit early
+
+        const prefix = match[1]?.toLowerCase() || 'bulbapedia'; // Default to Bulbapedia if no prefix
+        const searchText = match[2]?.trim(); // Extract the search term
+
+        if (!searchText) {
+            return message.reply({
+                content: "Please provide a search term, e.g., `[[term]]` or `[[prefix:term]]`.",
+                allowedMentions: { repliedUser: false }
+            });
+        }
+
+        const apiUrl = wikiSources[prefix];
+        if (!apiUrl) {
+            return message.reply({
+                content: `Unknown wiki prefix: "${prefix}". Supported prefixes are: ${Object.keys(wikiSources).join(', ')}`,
+                allowedMentions: { repliedUser: false }
+            });
+        }
+
+        try {
+            // Perform a search query to find the term
+            const searchUrl = `${apiUrl}?action=query&list=search&srsearch=${encodeURIComponent(searchText)}&format=json`;
+            const response = await needle('get', searchUrl);
+
+            if (response.statusCode === 200) {
+                const searchResults = response.body?.query?.search;
+
+                if (searchResults && searchResults.length > 0) {
+                    const exactMatch = searchResults.find(
+                        (result) => result.title.toLowerCase() === searchText.toLowerCase()
+                    );
+                    const matchedResult = exactMatch || searchResults[0];
+                    const pageTitle = encodeURIComponent(matchedResult.title.replace(/ /g, '_'));
+                    await message.reply({
+                        content: `${apiUrl.replace('/w/api.php', '')}/wiki/${pageTitle}`,
+                        allowedMentions: { repliedUser: false }
+                    });
+                } else {
+                    await message.reply({
+                        content: `No results found for "${searchText}" on ${prefix} wiki.`,
+                        allowedMentions: { repliedUser: false }
+                    });
                 }
-            } catch (error) {
-                console.error(error);
-                return message.reply("An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please ping BulbaTech.");
+            } else {
+                console.error(`Search API error: ${response.statusCode}`);
+                await message.reply({
+                    content: `Could not fetch results for "${searchText}" from ${prefix} wiki.`,
+                    allowedMentions: { repliedUser: false }
+                });
             }
+        } catch (error) {
+            console.error('Error fetching data from the wiki API:', error);
+            await message.reply({
+                content: `An error occurred while fetching data from ${prefix} wiki.`,
+                allowedMentions: { repliedUser: false }
+            });
         }
 
         //Disable invites
@@ -268,5 +343,5 @@ module.exports = {
                 return false; // Don't recognize the format
         }
         return [duration * 1000, interval];
-    }
+        }
 }
