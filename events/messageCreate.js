@@ -11,6 +11,21 @@ import { Blacklist, ModLogs } from "../includes/index.js";
 
 const Op = _Op;
 
+/**
+ * This function replaces the character `&` into its URL-escaped form.
+ * 
+ * This function is used to fix rendering of embeds when the page title contains special characters
+ * like `&`, which may not be handled by Discord as expected. This function does not simply replace
+ * all reserved characters, which can make the link look uglier when those are replaced.
+ * 
+ * @author C-Ezra-M
+ * @param {string} link The link to process.
+ * @return The processed link.
+ */
+function fixRenderingForEmbed(link) {
+  return link.replace(/&/g, encodeURIComponent);
+}
+
 export const name = Events.MessageCreate;
 export async function execute(message) {
   if (message.guild.id !== config.guildID || !message.member) return;
@@ -28,7 +43,7 @@ export async function execute(message) {
       if (response.statusCode === 200) {
         let data = response.body;
         if (data[3] && data[3].length > 0) {
-          const firstLink = data[3][0];
+          const firstLink = fixRenderingForEmbed(data[3][0]);
           return message.reply(firstLink);
         } else {
           return message.reply(
