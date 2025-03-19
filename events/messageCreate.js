@@ -23,8 +23,7 @@ const Op = _Op;
  * @return The processed link.
  */
 function fixRenderingForEmbed(link) {
-  let newLink = link.replace(/&/g, encodeURIComponent);
-  return newLink;
+  return link.replace(/&/g, encodeURIComponent);
 }
 
 export const name = Events.MessageCreate;
