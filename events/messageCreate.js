@@ -23,7 +23,7 @@ const Op = _Op;
  * @return The processed link.
  */
 function fixRenderingForEmbed(link) {
-  let newLink = link.replace(/&/g, "%26");
+  let newLink = link.replace(/&/g, encodeURIComponent);
   return newLink;
 }
 
