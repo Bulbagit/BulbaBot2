@@ -7,6 +7,8 @@ import config from "../config.js";
 
 export const name = Events.GuildMemberUpdate;
 export async function execute(member, newmember) {
+  if (member.guildID !== config.guildID)
+    return;
   const logsChannel = await member.guild.channels.fetch(config.logChannel);
 
   let displaymsg = "";

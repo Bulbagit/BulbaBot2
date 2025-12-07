@@ -25,9 +25,10 @@ export async function execute(message) {
     )}&redirects=resolve&format=json`;
     try {
       let response = await needle("get", url);
+
       if (response.statusCode === 200) {
         let data = response.body;
-        if (data[3] && data[3].length > 0) {
+        if (Array.isArray(data) && data[3] && data[3].length > 0) {
           const firstLink = data[3][0];
           return message.reply(firstLink);
         } else {
@@ -36,9 +37,7 @@ export async function execute(message) {
           );
         }
       } else {
-        return message.reply(
-          "Failed to fetch data from Bulbapedia. Please try again."
-        );
+        return message.reply("Failed to fetch data from Bulbapedia. Please try again.");
       }
     } catch (error) {
       console.error(error);
@@ -98,7 +97,7 @@ export async function execute(message) {
       .setTimestamp();
     return logsChannel.send({ embeds: [response] });
   }
-  return this.filterMessage(message);
+  return filterMessage(message);
 }
 export async function filterMessage(message) {
   const filters = await Blacklist.findAll();
@@ -122,7 +121,7 @@ export async function filterMessage(message) {
       );
       if (minimumAccountAge.length) {
         const time = minimumAccountAge[0].split(":");
-        const duration = this.getDuration(time[1])[0];
+        const duration = getDuration(time[1])[0];
         if (Date.now() - accountAge < Date.now() - duration) return; // Account is older than set age; Ignore this filter
       }
       let minimumServerTime = options.filter((option) =>
@@ -130,7 +129,7 @@ export async function filterMessage(message) {
       );
       if (minimumServerTime.length) {
         const time = minimumServerTime[0].split(":");
-        const duration = this.getDuration(time[1])[0];
+        const duration = getDuration(time[1])[0];
         if (Date.now() - serverTime < Date.now() - duration) return; // Account has been in server long enough; Ignore filter
       }
     }
@@ -230,7 +229,7 @@ export async function filterMessage(message) {
             let time = options
               .filter((option) => option.startsWith("warntime"))[0]
               .split(":")[1];
-            let interval = this.getDuration(time)[1];
+            let interval = getDuration(time)[1];
             const warnings = await ModLogs.count({
               where: {
                 loggerID: message.client.user.id,
