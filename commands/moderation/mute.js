@@ -16,24 +16,17 @@ const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
 
 export const data = new SlashCommandBuilder()
   .setName("mute")
-  .setDescription(
-    "Prevent a user from typing in text channels for a set period of time."
-  )
+  .setDescription("Prevent a user from typing in text channels for a set period of time.")
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
   .addStringOption((reason) =>
-    reason
-      .setName("reason")
-      .setDescription("Reason for mute.")
-      .setRequired(true)
+    reason.setName("reason").setDescription("Reason for mute.").setRequired(true)
   )
   .addStringOption((duration) =>
     duration
       .setName("duration")
-      .setDescription(
-        "Duration for the mute. Accepts days (d), hours (h), or minutes (m)."
-      )
+      .setDescription("Duration for the mute. Accepts days (d), hours (h), or minutes (m).")
       .setRequired(true)
   );
 export async function execute(interaction) {
@@ -43,33 +36,21 @@ export async function execute(interaction) {
   const reason = interaction.options.getString("reason");
   // Not a mod; cannot use this command
   if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "mute",
-        details: `${interaction.user.username} attempted to mute user #${user.username} with reason ${reason}`,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "mute",
+      details: `${interaction.user.username} attempted to mute user #${user.username} with reason ${reason}`,
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
   }
-  const member = await interaction.guild.members
-    .fetch(user)
-    .catch((err) => console.log(err));
+  const member = await interaction.guild.members.fetch(user).catch((err) => console.log(err));
   // Target is a mod. Abort.
   if (member.roles.highest.position >= modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "mute",
-        details: `User ${interaction.user.username} attempted to mute ${user.username}, giving the reason "${reason}"`,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "mute",
+      details: `User ${interaction.user.username} attempted to mute ${user.username}, giving the reason "${reason}"`,
+    });
     return interaction.reply(
       "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
     );
@@ -150,9 +131,7 @@ export async function execute(interaction) {
       const response = new EmbedBuilder()
         .setColor(config.messageColors.memMute)
         .setTitle("User Muted")
-        .setDescription(
-          `User ${user.username} has been muted for ${userDuration}.`
-        )
+        .setDescription(`User ${user.username} has been muted for ${userDuration}.`)
         .setTimestamp();
       logsChannel.send({ embeds: [response] });
       return interaction.reply({ embeds: [response] });
@@ -182,9 +161,7 @@ export async function execute(interaction) {
       const response = new EmbedBuilder()
         .setColor(config.messageColors.memMute)
         .setTitle("User Muted")
-        .setDescription(
-          `User ${user.username} has been muted for ${userDuration}.`
-        )
+        .setDescription(`User ${user.username} has been muted for ${userDuration}.`)
         .setTimestamp();
       return interaction.reply({
         content:

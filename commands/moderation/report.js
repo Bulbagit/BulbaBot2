@@ -3,7 +3,7 @@
  * Report a user for poor behavior
  */
 
-import { EmbedBuilder, SlashCommandBuilder, userMention } from "discord.js";
+import { EmbedBuilder, MessageFlags, SlashCommandBuilder, userMention } from "discord.js";
 import Sequelize from "sequelize";
 import config from "../../config.js";
 import { ReportLogs } from "../../includes/index.js";
@@ -29,9 +29,7 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const reportedUser = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
-  const reportsChannel = await interaction.guild.channels.fetch(
-    config.reportChannel
-  );
+  const reportsChannel = await interaction.guild.channels.fetch(config.reportChannel);
   const reportingUser = interaction.user;
 
   return sequelize
@@ -58,7 +56,7 @@ export async function execute(interaction) {
       reportsChannel.send({ embeds: [response] });
       interaction.reply({
         content: "Your report has been submitted for review.",
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     })
     .catch((err) => {
@@ -83,7 +81,7 @@ export async function execute(interaction) {
       reportsChannel.send({ embeds: [response] });
       interaction.reply({
         content: "Your report has been submitted for review.",
-        ephemeral: true,
+        flags: MessageFlags.Epehemeral,
       });
     });
 }

@@ -16,7 +16,7 @@ export async function execute(message) {
   if (message.guild.id !== config.guildID || !message.member) return;
 
   // Link to wiki when using [[...]]
-  const linkRegex = /\[\[(.*?)\]\]/;
+  const linkRegex = /\[\[(.*?)]]/;
   if (linkRegex.test(message.content.toLowerCase())) {
     const match = message.content.match(linkRegex);
     const searchText = match[1];
@@ -115,18 +115,14 @@ export async function filterMessage(message) {
       flags.splice(flags.indexOf("n"), 1);
       const accountAge = message.author.createdAt;
       const serverTime = message.member.joinedAt;
-      if (!typeof options.filter !== "function") return;
-      let minimumAccountAge = options.filter((option) =>
-        option.startsWith("minimumaccountage")
-      );
+      if (typeof options.filter !== "function") return;
+      let minimumAccountAge = options.filter((option) => option.startsWith("minimumaccountage"));
       if (minimumAccountAge.length) {
         const time = minimumAccountAge[0].split(":");
         const duration = getDuration(time[1])[0];
         if (Date.now() - accountAge < Date.now() - duration) return; // Account is older than set age; Ignore this filter
       }
-      let minimumServerTime = options.filter((option) =>
-        option.startsWith("minimumservertime")
-      );
+      let minimumServerTime = options.filter((option) => option.startsWith("minimumservertime"));
       if (minimumServerTime.length) {
         const time = minimumServerTime[0].split(":");
         const duration = getDuration(time[1])[0];
@@ -146,7 +142,7 @@ export async function filterMessage(message) {
       const filterID = filter.getDataValue("id");
       Array.from(flags).forEach(async (flag) => {
         switch (flag) {
-          case "b":
+          case "b": {
             actions.push("User was banned.");
             banned = true;
             await message.author.send({
@@ -164,7 +160,8 @@ export async function filterMessage(message) {
                 console.log(err);
               });
             break;
-          case "k":
+          }
+          case "k": {
             kicked = true;
             actions.push("User was kicked.");
             await message.author.send({
@@ -175,16 +172,14 @@ export async function filterMessage(message) {
                 ` the moderation team may result in referral to Discord staff.\nPlease do not reply directly to this message; you will not receive a response.`,
             });
             message.guild.members
-              .kick(
-                message.author,
-                "Kicked automatically due to filter settings"
-              )
+              .kick(message.author, "Kicked automatically due to filter settings")
               .then(() => {})
               .catch((err) => {
                 console.log(err);
               });
             break;
-          case "w":
+          }
+          case "w": {
             actions.push("Warning logged for user.");
             warned = true;
             flags.splice(flags.indexOf("w"), 1); // Remove from the list so softban knows what to do
@@ -208,7 +203,8 @@ export async function filterMessage(message) {
                 console.log(err);
               });
             break;
-          case "d":
+          }
+          case "d": {
             actions.push("Message was deleted.");
             message
               .delete()
@@ -225,10 +221,9 @@ export async function filterMessage(message) {
                 console.log(err);
               });
             break;
-          case "s":
-            let time = options
-              .filter((option) => option.startsWith("warntime"))[0]
-              .split(":")[1];
+          }
+          case "s": {
+            let time = options.filter((option) => option.startsWith("warntime"))[0].split(":")[1];
             let interval = getDuration(time)[1];
             const warnings = await ModLogs.count({
               where: {
@@ -242,15 +237,11 @@ export async function filterMessage(message) {
             let threshold = 0;
             if (flags.indexOf("w") !== -1) threshold += 1;
             threshold += parseInt(
-              options
-                .filter((option) => option.startsWith("warnlimit"))[0]
-                .split(":")[1],
+              options.filter((option) => option.startsWith("warnlimit"))[0].split(":")[1],
               10
             );
             if (warnings === threshold) {
-              actions.push(
-                "User was automatically banned due to an accumulation of warnings."
-              );
+              actions.push("User was automatically banned due to an accumulation of warnings.");
               await message.author.send({
                 content:
                   `You have been automatically banned from ${message.guild.name} for your message in ${message.channel.name}, which is as follows:\n` +
@@ -260,9 +251,7 @@ export async function filterMessage(message) {
               });
               await message.guild.members
                 .ban(message.author, {
-                  reason:
-                    "Banned automatically" +
-                    " due to an accumulation of automated warnings.",
+                  reason: "Banned automatically" + " due to an accumulation of automated warnings.",
                 })
                 .then(() => {
                   banned = true;
@@ -272,6 +261,7 @@ export async function filterMessage(message) {
                 });
             }
             break;
+          }
         }
       });
       const responseFields = [
@@ -287,9 +277,7 @@ export async function filterMessage(message) {
       const response = new EmbedBuilder()
         .setColor(config.messageColors.filter)
         .setTitle(`Filter ID ${filterID} tripped`)
-        .setDescription(
-          `User ${message.author.username} triggered filter #${filterID}`
-        )
+        .setDescription(`User ${message.author.username} triggered filter #${filterID}`)
         .addFields(responseFields)
         .setTimestamp();
       const logsChannel = message.guild.channels.resolve(config.logChannel);

@@ -1,14 +1,7 @@
 // @ts-check
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import Sequelize from "sequelize";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
 
 export const data = new SlashCommandBuilder()
   .setName("modlogs")
@@ -21,15 +14,10 @@ export async function execute(interaction) {
   const user = interaction.options.getUser("user");
   if (interaction.member.roles.highest.position < modRole.position) {
     // Not authorized to perform this action; warn mods
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        target: user,
-        command: "modlogs",
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      target: user,
+      command: "modlogs",
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
@@ -72,8 +60,7 @@ export async function execute(interaction) {
       reason += "**Member Muted** for " + duration[1] + "-\nReason: ";
     }
     fields.push({
-      name:
-        "Warning #" + (i + 1) + " - Warning ID: #" + warning.getDataValue("id"),
+      name: "Warning #" + (i + 1) + " - Warning ID: #" + warning.getDataValue("id"),
       value:
         "User:\n(" +
         user.id +

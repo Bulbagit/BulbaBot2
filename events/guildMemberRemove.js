@@ -30,14 +30,10 @@ export async function checkRemoved(member) {
           .setColor(config.messageColors.memLeave)
           .setTitle("Member Left")
           .setThumbnail(member.user.displayAvatarURL())
-          .setDescription(
-            "<@!" + member.id + "> (" + member.user.username + ")"
-          )
+          .setDescription("<@!" + member.id + "> (" + member.user.username + ")")
           .setFooter({ text: `ID:  ${member.id}` })
           .setTimestamp();
-        logsChannel
-          .send({ embeds: [response] })
-          .catch((err) => console.log(err));
+        logsChannel.send({ embeds: [response] }).catch((err) => console.log(err));
       }
     })
     .catch((err) => {

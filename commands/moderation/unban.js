@@ -17,16 +17,10 @@ export const data = new SlashCommandBuilder()
   .setName("unban")
   .setDescription("Remove a ban from a user, allowing them to rejoin.")
   .addStringOption((user) =>
-    user
-      .setName("user")
-      .setDescription(`The banned user's ID.`)
-      .setRequired(true)
+    user.setName("user").setDescription(`The banned user's ID.`).setRequired(true)
   )
   .addStringOption((reason) =>
-    reason
-      .setName("reason")
-      .setDescription("Reason for lifting the ban.")
-      .setRequired(true)
+    reason.setName("reason").setDescription("Reason for lifting the ban.").setRequired(true)
   );
 export async function execute(interaction) {
   const userID = interaction.options.getString("user");
@@ -39,15 +33,10 @@ export async function execute(interaction) {
     !interaction.user.id !== config.adminID &&
     interaction.member.roles.highest.position < modRole.position
   ) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "unban",
-        details: "",
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "unban",
+      details: "",
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
@@ -97,9 +86,7 @@ export async function execute(interaction) {
 
           channel.send({ embeds: [response] });
         });
-      const channel = await interaction.client.channels.fetch(
-        config.logChannel
-      );
+      const channel = await interaction.client.channels.fetch(config.logChannel);
       const response = new EmbedBuilder()
         .setColor(config.messageColors.memUnban)
         .setTitle("Member unbanned")
@@ -127,8 +114,6 @@ export async function execute(interaction) {
         ])
         .setTimestamp();
       channel.send({ embeds: [response] });
-      return interaction.reply(
-        "Unban unsuccessful. Check the logs for more information."
-      );
+      return interaction.reply("Unban unsuccessful. Check the logs for more information.");
     });
 }

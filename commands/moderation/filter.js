@@ -20,10 +20,7 @@ export const data = new SlashCommandBuilder()
       .setName("add")
       .setDescription("Add a filter to the blacklist")
       .addStringOption((term) =>
-        term
-          .setName("term")
-          .setDescription("The term to filter.")
-          .setRequired(true)
+        term.setName("term").setDescription("The term to filter.").setRequired(true)
       )
       .addStringOption((flags) =>
         flags
@@ -62,9 +59,7 @@ export const data = new SlashCommandBuilder()
           .setDescription("The ID of the filter you wish to edit.")
           .setRequired(true)
       )
-      .addStringOption((term) =>
-        term.setName("term").setDescription("The term to filter.")
-      )
+      .addStringOption((term) => term.setName("term").setDescription("The term to filter."))
       .addStringOption((flags) =>
         flags
           .setName("flags")
@@ -80,12 +75,8 @@ export const data = new SlashCommandBuilder()
           )
       )
   )
-  .addSubcommand((list) =>
-    list.setName("list").setDescription("List all current filters.")
-  )
-  .addSubcommand((help) =>
-    help.setName("help").setDescription("Get help with the filter system.")
-  );
+  .addSubcommand((list) => list.setName("list").setDescription("List all current filters."))
+  .addSubcommand((help) => help.setName("help").setDescription("Get help with the filter system."));
 export async function execute(interaction) {
   const modRole = await interaction.guild.roles.fetch(config.modID);
 
@@ -94,16 +85,10 @@ export async function execute(interaction) {
     !interaction.user.id !== config.adminID &&
     interaction.member.roles.highest.position < modRole.position
   ) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "filter",
-        details:
-          "User ${interaction.user.username} attempted to interact with filters.",
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "filter",
+      details: "User ${interaction.user.username} attempted to interact with filters.",
+    });
 
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
@@ -112,7 +97,7 @@ export async function execute(interaction) {
 
   const subcommand = interaction.options.getSubcommand();
   switch (subcommand) {
-    case "help":
+    case "help": {
       const flagFields = [
         {
           name: "d",
@@ -132,8 +117,7 @@ export async function execute(interaction) {
         },
         {
           name: "s",
-          value:
-            "Ban a user after a certain number of warnings are accumulated (softban).",
+          value: "Ban a user after a certain number of warnings are accumulated (softban).",
         },
         {
           name: "n",
@@ -176,8 +160,9 @@ export async function execute(interaction) {
         .addFields(optionFields);
 
       return await interaction.reply({ embeds: [flagsEmbed, optionsEmbed] });
+    }
 
-    case "list":
+    case "list": {
       let data = [];
       const filters = await Blacklist.findAll();
 
@@ -192,10 +177,7 @@ export async function execute(interaction) {
         data.push({
           name: `• Filter ID#${id}`,
           value:
-            `"${term}"\n` +
-            `Flags: ${flags}\n` +
-            `Options: ${options}\n` +
-            `Added by: ${author}`,
+            `"${term}"\n` + `Flags: ${flags}\n` + `Options: ${options}\n` + `Added by: ${author}`,
           inline: true,
         });
       });
@@ -207,8 +189,8 @@ export async function execute(interaction) {
         .setTimestamp();
 
       return interaction.reply({ embeds: [embed] });
-
-    case "add":
+    }
+    case "add": {
       const term = interaction.options.getString("term");
       const flags = interaction.options.getString("flags");
       const options = interaction.options.getString("options");
@@ -325,8 +307,9 @@ export async function execute(interaction) {
         console.log(e);
       }
       break;
+    }
 
-    case "remove":
+    case "remove": {
       const removeID = interaction.options.getString("filter");
       const removeFilter = await Blacklist.findByPk(removeID);
 
@@ -337,26 +320,24 @@ export async function execute(interaction) {
 
       let removeOpts = removeFilter.getDataValue("options");
 
-      const removeEmbed = new EmbedBuilder()
-        .setTitle(`Filter ID ${removeID}`)
-        .addFields([
-          {
-            name: "Term",
-            value: removeFilter.getDataValue("term"),
-          },
-          {
-            name: "Flags",
-            value: removeFilter.getDataValue("flags"),
-          },
-          {
-            name: "Options",
-            value: removeOpts ? removeOpts : "none",
-          },
-          {
-            name: "Author",
-            value: removeFilter.getDataValue("creator"),
-          },
-        ]);
+      const removeEmbed = new EmbedBuilder().setTitle(`Filter ID ${removeID}`).addFields([
+        {
+          name: "Term",
+          value: removeFilter.getDataValue("term"),
+        },
+        {
+          name: "Flags",
+          value: removeFilter.getDataValue("flags"),
+        },
+        {
+          name: "Options",
+          value: removeOpts ? removeOpts : "none",
+        },
+        {
+          name: "Author",
+          value: removeFilter.getDataValue("creator"),
+        },
+      ]);
 
       const removeConfirm = new ButtonBuilder()
         .setCustomId("confirm")
@@ -368,10 +349,7 @@ export async function execute(interaction) {
         .setLabel("Cancel")
         .setStyle(ButtonStyle.Danger);
 
-      const removeRow = new ActionRowBuilder().addComponents(
-        removeCancel,
-        removeConfirm
-      );
+      const removeRow = new ActionRowBuilder().addComponents(removeCancel, removeConfirm);
 
       const removeResponse = await interaction.reply({
         content: `Removing filter ID ${removeID}. Please review the information and confirm that you wish to do this.`,
@@ -407,8 +385,8 @@ export async function execute(interaction) {
         console.log(err);
       }
       break;
-
-    case "edit":
+    }
+    case "edit": {
       const filterID = interaction.options.getString("filter");
       const filter = await Blacklist.findOne({ where: { id: filterID } });
 
@@ -430,10 +408,7 @@ export async function execute(interaction) {
       if (!editFlags) editFlags = filter.getDataValue("flags");
       if (!editOptions) editOptions = filter.getDataValue("options");
 
-      const validate = this.validateFlags(
-        editFlags.split(","),
-        editOptions.split(",")
-      );
+      const validate = this.validateFlags(editFlags.split(","), editOptions.split(","));
 
       const finalEditFlags = validate[0].join(",");
       const finalEditOptions = validate[1].join(",");
@@ -447,9 +422,7 @@ export async function execute(interaction) {
         .then(async () => {
           interaction.reply("Filter updated successfully.");
 
-          const logsChannel = await interaction.guild.channels.fetch(
-            config.logChannel
-          );
+          const logsChannel = await interaction.guild.channels.fetch(config.logChannel);
           const fields = [
             { name: "Term", value: editTerm },
             { name: "Flags", value: finalEditFlags },
@@ -472,6 +445,7 @@ export async function execute(interaction) {
             "There was an error updating the filter. Please inform the bot's administrator."
           );
         });
+    }
   }
 }
 export function validateFlags(flags, options) {
@@ -494,10 +468,7 @@ export function validateFlags(flags, options) {
 
         break;
       case "n":
-        if (
-          !optionsArray["minimumaccountage"] &&
-          !optionsArray["minimumservertime"]
-        )
+        if (!optionsArray["minimumaccountage"] && !optionsArray["minimumservertime"])
           options.push("minimumservertime:1h");
 
         index = flags.indexOf(flag);
@@ -510,12 +481,7 @@ export function validateFlags(flags, options) {
   return [flags, options];
 }
 export function validateOptions(options) {
-  const validOptions = [
-    "minimumservertime",
-    "minimumaccountage",
-    "warntime",
-    "warnlimit",
-  ];
+  const validOptions = ["minimumservertime", "minimumaccountage", "warntime", "warnlimit"];
 
   let goodOptions = [];
   let badOptions = [];
@@ -545,10 +511,7 @@ export function validateOptions(options) {
         let measure = value.trim().toLowerCase().slice(-1);
         let duration = value.trim().toLowerCase().slice(0, 1);
         if (
-          (measure !== "s" &&
-            measure !== "m" &&
-            measure !== "h" &&
-            measure !== "d") ||
+          (measure !== "s" && measure !== "m" && measure !== "h" && measure !== "d") ||
           isNaN(duration)
         ) {
           badOptions.push(name + ":" + value);

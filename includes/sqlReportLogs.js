@@ -3,13 +3,7 @@
  * Contains the sequelize class for the reports table.
  */
 
-import Sequelize, {
-    Model as _Model,
-    BIGINT,
-    DATE,
-    literal,
-    TEXT,
-} from "sequelize";
+import Sequelize, { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
 import config from "../config.js";
 
 const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {

@@ -4,13 +4,7 @@
  * This table is referenced on restart to requeue any unmutes that were pending.
  */
 
-import Sequelize, {
-  Model as _Model,
-  BIGINT,
-  DATE,
-  literal,
-  TEXT,
-} from "sequelize";
+import Sequelize, { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
 import config from "../config.js";
 
 const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {

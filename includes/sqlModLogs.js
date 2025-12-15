@@ -3,13 +3,7 @@
  * Contains the sequelize class for the moderation logs table.
  */
 
-import Sequelize, {
-    Model as _Model,
-    BIGINT,
-    DATE,
-    literal,
-    STRING,
-} from "sequelize";
+import Sequelize, { Model as _Model, BIGINT, DATE, literal, STRING } from "sequelize";
 import config from "../config.js";
 
 const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {

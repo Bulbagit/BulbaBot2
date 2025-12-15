@@ -3,15 +3,8 @@
  * Event handler for logging when a user joins the server.
  */
 import { EmbedBuilder, Events } from "discord.js";
-import Sequelize from "sequelize";
 import config from "../config.js";
 import { Mutes } from "../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
 
 export const name = Events.GuildMemberAdd;
 export async function execute(member) {
@@ -30,9 +23,7 @@ export async function execute(member) {
           .setColor(config.messageColors.memJoin)
           .setTitle("Muted Member Joined")
           .setThumbnail(member.user.displayAvatarURL())
-          .setDescription(
-            "<@!" + member.id + "> (" + member.user.username + ")"
-          )
+          .setDescription("<@!" + member.id + "> (" + member.user.username + ")")
           .addFields([
             { name: "Account created at: ", value: `${member.user.createdAt}` },
             {
@@ -51,9 +42,7 @@ export async function execute(member) {
           .setFooter({ text: `ID: ${member.id}` })
           .setTimestamp();
 
-        return logsChannel
-          .send({ embeds: [response] })
-          .catch((err) => console.log(err));
+        return logsChannel.send({ embeds: [response] }).catch((err) => console.log(err));
       })
       .catch((err) => {
         console.log(err);
@@ -64,14 +53,10 @@ export async function execute(member) {
       .setTitle(`Member Joined`)
       .setThumbnail(member.user.displayAvatarURL())
       .setDescription("<@!" + member.id + "> (" + member.user.username + ")")
-      .addFields([
-        { name: "Account created at: ", value: `${member.user.createdAt}` },
-      ])
+      .addFields([{ name: "Account created at: ", value: `${member.user.createdAt}` }])
       .setFooter({ text: `ID: ${member.id}` })
       .setTimestamp();
 
-    return logsChannel
-      .send({ embeds: [response] })
-      .catch((err) => console.log(err));
+    return logsChannel.send({ embeds: [response] }).catch((err) => console.log(err));
   }
 }

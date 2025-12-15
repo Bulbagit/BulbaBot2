@@ -20,10 +20,7 @@ export const data = new SlashCommandBuilder()
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
   .addStringOption((reason) =>
-    reason
-      .setName("reason")
-      .setDescription("Reason for kick.")
-      .setRequired(true)
+    reason.setName("reason").setDescription("Reason for kick.").setRequired(true)
   );
 export async function execute(interaction) {
   const user = interaction.options.getUser("user");
@@ -36,31 +33,21 @@ export async function execute(interaction) {
     !interaction.user.id !== config.adminID &&
     interaction.member.roles.highest.position < modRole.position
   ) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "kick",
-        target: user,
-        reason: reason,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "kick",
+      target: user,
+      reason: reason,
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
   }
   if (member.roles.highest.position >= modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "kick",
-        target: user,
-        reason: reason,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "kick",
+      target: user,
+      reason: reason,
+    });
     return interaction.reply(
       "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
     );
@@ -97,9 +84,7 @@ export async function execute(interaction) {
       member
         .kick(reason)
         .then(async () => {
-          const channel = await interaction.client.channels.fetch(
-            config.logChannel
-          );
+          const channel = await interaction.client.channels.fetch(config.logChannel);
           const response = new EmbedBuilder()
             .setColor(config.messageColors.memKick)
             .setTitle("Member Kicked")
@@ -113,9 +98,7 @@ export async function execute(interaction) {
         })
         .catch(async (err) => {
           console.log(err);
-          const channel = await interaction.guild.channels.fetch(
-            config.logChannel
-          );
+          const channel = await interaction.guild.channels.fetch(config.logChannel);
           const response = new EmbedBuilder()
             .setColor(config.messageColors.error)
             .setTitle("Error kicking user")
@@ -134,9 +117,7 @@ export async function execute(interaction) {
             ])
             .setTimestamp();
           channel.send({ embeds: [response] });
-          return interaction.reply(
-            "Kick unsuccessful. Check the logs for more information."
-          );
+          return interaction.reply("Kick unsuccessful. Check the logs for more information.");
         });
     })
     .catch(async (err) => {
@@ -183,9 +164,7 @@ export async function execute(interaction) {
             )
             .setTimestamp();
           channel.send({ embeds: [response] });
-          return interaction.reply(
-            "Kick unsuccessful. Check the logs for more information."
-          );
+          return interaction.reply("Kick unsuccessful. Check the logs for more information.");
         });
     });
 }

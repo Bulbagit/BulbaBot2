@@ -4,27 +4,15 @@
  */
 
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import Sequelize from "sequelize";
 import config from "../../config.js";
 import { Mutes } from "../../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
 
 export const data = new SlashCommandBuilder()
   .setName("unmute")
   .setDescription("Manually remove a mute from a user.")
-  .addUserOption((user) =>
-    user.setName("user").setDescription("The muted user.").setRequired(true)
-  )
+  .addUserOption((user) => user.setName("user").setDescription("The muted user.").setRequired(true))
   .addStringOption((reason) =>
-    reason
-      .setName("reason")
-      .setDescription("Reason for removing the mute.")
-      .setRequired(true)
+    reason.setName("reason").setDescription("Reason for removing the mute.").setRequired(true)
   );
 export async function execute(interaction) {
   const modRole = await interaction.guild.roles.fetch(config.modID);
@@ -33,15 +21,10 @@ export async function execute(interaction) {
   const reason = interaction.options.getString("reason");
   // Not a mod; cannot use this command
   if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "unmute",
-        details: `${interaction.user.username} attempted to unmute user #${user.username} with reason ${reason}`,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "unmute",
+      details: `${interaction.user.username} attempted to unmute user #${user.username} with reason ${reason}`,
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );

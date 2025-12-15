@@ -12,24 +12,17 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const modRole = await interaction.guild.roles.fetch(config.modID);
   if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.event.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "serverinfo",
-        details: `${interaction.user.username} attempted to view server info.
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "serverinfo",
+      details: `${interaction.user.username} attempted to view server info.
                 `,
-      }
-    );
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
   }
   const members = interaction.guild.memberCount;
-  const humans = interaction.guild.members.cache.filter(
-    (member) => !member.user.bot
-  ).size;
+  const humans = interaction.guild.members.cache.filter((member) => !member.user.bot).size;
   const bots = members - humans;
   let roles = [];
   interaction.guild.roles.cache.forEach((role) => roles.push(role.name));
@@ -39,10 +32,7 @@ export async function execute(interaction) {
     .filter((channel) => channel.type === 4)
     .forEach((channel) => categories.push(channel.name));
   categories = categories.join(", ").trim();
-  console.log(categories);
-  const owner = await interaction.guild.members.fetch(
-    interaction.guild.ownerId
-  );
+  const owner = await interaction.guild.members.fetch(interaction.guild.ownerId);
   const response = new EmbedBuilder()
     .setColor(config.messageColors.whois)
     .setAuthor({
@@ -89,11 +79,7 @@ export async function execute(interaction) {
       { name: "Categories", value: categories },
     ])
     .setFooter({
-      text:
-        "ID: " +
-        interaction.guild.id +
-        "|Server Created • " +
-        interaction.guild.createdAt,
+      text: "ID: " + interaction.guild.id + "|Server Created • " + interaction.guild.createdAt,
     });
   return interaction.reply({ embeds: [response] });
 }

@@ -15,17 +15,12 @@ const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
 
 export const data = new SlashCommandBuilder()
   .setName("ban")
-  .setDescription(
-    "Remove a user from the server and prevent them from re-joining."
-  )
+  .setDescription("Remove a user from the server and prevent them from re-joining.")
   .addStringOption((reason) =>
     reason.setName("reason").setDescription("Reason for ban.").setRequired(true)
   )
   .addUserOption((user) =>
-    user
-      .setName("user")
-      .setDescription("The offending user or their ID")
-      .setRequired(true)
+    user.setName("user").setDescription("The offending user or their ID").setRequired(true)
   )
   .addStringOption((purgehours) =>
     purgehours
@@ -53,30 +48,20 @@ export async function execute(interaction) {
       !interaction.user.id !== config.adminID &&
       interaction.member.roles.highest.position < modRole.position
     ) {
-      interaction.client.emit(
-        "unauthorized",
-        interaction.client,
-        interaction.user,
-        {
-          command: "ban",
-          details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
-        }
-      );
+      interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+        command: "ban",
+        details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
+      });
 
       return interaction.reply(
         "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
       );
     }
     if (isInServer.roles.highest.position >= modRole.position) {
-      interaction.client.emit(
-        "unauthorized",
-        interaction.client,
-        interaction.user,
-        {
-          command: "ban",
-          details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
-        }
-      );
+      interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+        command: "ban",
+        details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
+      });
 
       return interaction.reply(
         "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
@@ -119,18 +104,12 @@ export async function execute(interaction) {
       interaction.guild.members
         .ban(member, { reason: reason, deleteMessageSeconds: purgeSeconds })
         .then(async () => {
-          const channel = await interaction.client.channels.fetch(
-            config.logChannel
-          );
+          const channel = await interaction.client.channels.fetch(config.logChannel);
 
           let lBanDescr = `Member @${member.username} has been banned from the server by @${interaction.user.username}.`;
 
           if (purgeSeconds > 0) {
-            lBanDescr =
-              lBanDescr +
-              " (Purged messages for " +
-              purgeHoursStr +
-              " hour(s).)";
+            lBanDescr = lBanDescr + " (Purged messages for " + purgeHoursStr + " hour(s).)";
           }
 
           const response = new EmbedBuilder()
@@ -146,9 +125,7 @@ export async function execute(interaction) {
         .catch(async (err) => {
           console.log(err);
 
-          const channel = await interaction.guild.channels.fetch(
-            config.logChannel
-          );
+          const channel = await interaction.guild.channels.fetch(config.logChannel);
           const response = new EmbedBuilder()
             .setColor(config.messageColors.error)
             .setTitle("Error banning user")
@@ -168,9 +145,7 @@ export async function execute(interaction) {
             .setTimestamp();
           channel.send({ embeds: [response] });
 
-          return interaction.reply(
-            "Ban unsuccessful. Check the logs for more information."
-          );
+          return interaction.reply("Ban unsuccessful. Check the logs for more information.");
         });
     })
     .catch(async (err) => {
@@ -220,9 +195,7 @@ export async function execute(interaction) {
             .setTimestamp();
           channel.send({ embeds: [response] });
 
-          return interaction.reply(
-            "Ban unsuccessful. Check the logs for more information."
-          );
+          return interaction.reply("Ban unsuccessful. Check the logs for more information.");
         });
     });
 }

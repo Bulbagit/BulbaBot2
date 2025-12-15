@@ -16,15 +16,10 @@ export async function execute(interaction) {
   let user = interaction.options.getUser("user");
   const modRole = await interaction.guild.roles.fetch(config.modID);
   if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        command: "whois",
-        details: `${interaction.user.username} attempted to whois ${user.username}`,
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "whois",
+      details: `${interaction.user.username} attempted to whois ${user.username}`,
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
@@ -36,12 +31,8 @@ export async function execute(interaction) {
   let status = [];
   let game = [];
   if (member && member.presence && member.presence.activities) {
-    const customStatus = member.presence.activities.find(
-      (act) => act.name === "Custom Status"
-    );
-    const playing = member.presence.activities.find(
-      (act) => act.name === "Playing"
-    );
+    const customStatus = member.presence.activities.find((act) => act.name === "Custom Status");
+    const playing = member.presence.activities.find((act) => act.name === "Playing");
     if (customStatus && playing) {
       status.push(customStatus.state);
       game.push(playing.name);
@@ -80,10 +71,7 @@ export async function execute(interaction) {
       { name: "ID", value: user.id, inline: true },
       {
         name: "Nickname",
-        value:
-          member && member.nickname
-            ? member.nickname
-            : "None set or not in server",
+        value: member && member.nickname ? member.nickname : "None set or not in server",
         inline: true,
       },
       {

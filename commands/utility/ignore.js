@@ -12,9 +12,7 @@ for (const property in config.ignores) {
 
 export const data = new SlashCommandBuilder()
   .setName("ignore")
-  .setDescription(
-    "Allows you to ignore a channel. Use again to stop ignoring the channel."
-  )
+  .setDescription("Allows you to ignore a channel. Use again to stop ignoring the channel.")
   .addStringOption((group) =>
     group
       .setName("group")
@@ -28,8 +26,7 @@ export async function execute(interaction) {
       content: `${group} is not a valid channel to ignore.`,
     });
   const user = interaction.member;
-  if (!user.roles.cache.get(config.ignores[group]))
-    return this.addIgnore(user, group, interaction);
+  if (!user.roles.cache.get(config.ignores[group])) return this.addIgnore(user, group, interaction);
   else return this.removeIgnore(user, group, interaction);
 }
 export function addIgnore(user, group, interaction) {

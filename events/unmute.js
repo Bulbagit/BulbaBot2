@@ -18,11 +18,9 @@ export async function execute(client, mutes, fromStartup) {
     let pending = [],
       unmutes = [];
     for (const mute of mutes) {
-      const member = await guild.members
-        .fetch(mute.getDataValue("mutedID"))
-        .catch((err) => {
-          console.log(err);
-        });
+      const member = await guild.members.fetch(mute.getDataValue("mutedID")).catch((err) => {
+        console.log(err);
+      });
       if (!member) continue;
       const timeToUnmute = new Date(mute.getDataValue("unmutedTime")).getTime();
       const now = new Date().getTime();
@@ -95,7 +93,7 @@ export async function execute(client, mutes, fromStartup) {
             .setColor(config.messageColors.error)
             .setTitle("Database error")
             .setDescription(
-              `There was an error removing the mute for ${user.username} from the database. Please inform the bot's administrator.`
+              `There was an error removing the mute for ${member.user.username} from the database. Please inform the bot's administrator.`
             )
             .setTimestamp();
           logsChannel.send({ embeds: [alert] });

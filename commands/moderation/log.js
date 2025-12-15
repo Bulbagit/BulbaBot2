@@ -20,26 +20,18 @@ export const data = new SlashCommandBuilder()
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
   .addStringOption((reason) =>
-    reason
-      .setName("reason")
-      .setDescription("Reason for warning.")
-      .setRequired(true)
+    reason.setName("reason").setDescription("Reason for warning.").setRequired(true)
   );
 export async function execute(interaction) {
   const modRole = await interaction.guild.roles.fetch(config.modID);
   const user = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
   if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit(
-      "unauthorized",
-      interaction.client,
-      interaction.user,
-      {
-        target: user,
-        reason: reason,
-        command: "log",
-      }
-    );
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      target: user,
+      reason: reason,
+      command: "log",
+    });
     return interaction.reply(
       "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
     );
@@ -65,16 +57,12 @@ export async function execute(interaction) {
 
   // Success. Send the response.
   const response = new EmbedBuilder()
-    .setColor(messageColors.memWarn)
+    .setColor(config.messageColors.memWarn)
     .setTitle(`Warning logged for ${user.username}`)
     .setDescription(
-      `Warning ID #${results.dataValues.id}\n` +
-        `Logged by ${interaction.user.username}`
+      `Warning ID #${results.dataValues.id}\n` + `Logged by ${interaction.user.username}`
     )
-    .addFields(
-      { name: "Warning", value: reason },
-      { name: "ID", value: user.id }
-    )
+    .addFields({ name: "Warning", value: reason }, { name: "ID", value: user.id })
     .setTimestamp();
   interaction.reply({ embeds: [response] });
 }
