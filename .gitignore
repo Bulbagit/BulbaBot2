@@ -13,5 +13,4 @@ bun.lockb
 
 # environment variables
 .env
-config.json
 config.js

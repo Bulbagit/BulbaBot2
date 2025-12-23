@@ -1,5 +1,5 @@
 // Migration that will populate the names into the ModLogs table
-import { guildID, token } from "config.json";
+import { guildID, token } from "config.js";
 import { Client, GatewayIntentBits } from "discord.js";
 import { findAll } from "includes/sqlModLogs.js";
 const client = new Client({

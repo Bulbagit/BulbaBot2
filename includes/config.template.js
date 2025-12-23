@@ -13,6 +13,7 @@ const config = {
   dbpass: "",
   archiveID: "",
   logChannel: "",
+  autologChannel: "",
   reportChannel: "",
   modID: "",
   muteID: "",
