@@ -15,12 +15,12 @@ https://discord.com/developers/applications.
 You should also enable developer mode in your settings, to make
 it easier to get the IDs that you will need for your configuration file.
 
-Once you've created your own bot application, you'll need to create your config.json file with some details about
-you server. To get started, copy your `includes/config.json.template` file into the root of your bot directory and
+Once you've created your own bot application, you'll need to create your config.js file with some details about
+you server. To get started, copy your `includes/config.template.js` file into the root of your bot directory and
 fill out the values accordingly. Not everything is mandatory, but note that not everything will work
 if you don't fill out all the moderation values.
 
-Be absolutely sure that you do not commit your config.json file if you fork this repository. Your token, which is
+Be absolutely sure that you do not commit your config.js file if you fork this repository. Your token, which is
 generated when you create your bot's application, is akin to your password. If you upload it, anyone who sees it
 can log into your bot and use it.
 
