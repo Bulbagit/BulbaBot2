@@ -12,7 +12,7 @@ Events.Unmute = "unmute";
 export const name = Events.Unmute;
 export async function execute(client, mutes, fromStartup) {
   const guild = await client.guilds.fetch(config.guildID);
-  const logsChannel = await guild.channels.fetch(config.autologChannel);
+  const logsChannel = await guild.channels.fetch(config.logChannel);
   // mutes is an array passed by the startup event here
   if (fromStartup) {
     let pending = [],
