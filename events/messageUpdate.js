@@ -7,6 +7,8 @@ import config from "../config.js";
 
 export const name = Events.MessageUpdate;
 export async function execute(oldMessage, newMessage) {
+  // Only track events from our guild
+  if (oldMessage.guild.id !== config.guildID) return;
   // Creating an embed fires this event. This check prevents an error from crashing the bot and also prevents
   // logging messages with embeds.
   if (
