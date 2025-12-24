@@ -14,7 +14,7 @@ export async function execute(member) {
   setTimeout(this.checkRemoved, 2000, member);
 }
 export async function checkRemoved(member) {
-  const logsChannel = await member.guild.channels.fetch(config.logChannel);
+  const logsChannel = await member.guild.channels.fetch(config.autologChannel);
   ModLogs.findAll({
     where: {
       loggedID: member.id,

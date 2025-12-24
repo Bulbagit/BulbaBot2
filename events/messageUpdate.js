@@ -22,7 +22,7 @@ export async function execute(oldMessage, newMessage) {
     return console.log(
       `Strange behavior on message update. newMessage:\n${newMessage}\noldMessage:\n${oldMessage}`
     );
-  const logsChannel = await oldMessage.guild.channels.fetch(config.logChannel);
+  const logsChannel = await oldMessage.guild.channels.fetch(config.autologChannel);
   const response = new EmbedBuilder()
     .setColor(config.messageColors.messageEdit)
     .setTitle(`Message edited by ${newMessage.author.username}`)

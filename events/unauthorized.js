@@ -13,7 +13,7 @@ export async function execute(client, user, data) {
   // Our guild info cannot be passed to this event, so fetch it from client
   const guild = await client.guilds.fetch(config.guildID);
   const member = await client.users.fetch(user);
-  const logsChannel = await guild.channels.fetch(config.logChannel);
+  const logsChannel = await guild.channels.fetch(config.autologChannel);
   const command = data.command;
 
   const response = new EmbedBuilder()

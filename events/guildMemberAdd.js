@@ -8,7 +8,7 @@ import { Mutes } from "../includes/index.js";
 
 export const name = Events.GuildMemberAdd;
 export async function execute(member) {
-  const logsChannel = await member.guild.channels.fetch(config.logChannel);
+  const logsChannel = await member.guild.channels.fetch(config.autologChannel);
   const isMuted = await Mutes.findOne({
     where: {
       mutedID: member.id,

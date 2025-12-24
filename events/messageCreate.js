@@ -48,7 +48,7 @@ export async function execute(message) {
   }
 
   //Disable invites
-  const logsChannel = message.guild.channels.resolve(config.logChannel);
+  const logsChannel = message.guild.channels.resolve(config.autologChannel);
   const modRole = await message.guild.roles.fetch(config.modID);
   // Mods and up are exempt from this restriction
   const member = await message.guild.members.fetch(message.author);
@@ -280,7 +280,7 @@ export async function filterMessage(message) {
         .setDescription(`User ${message.author.username} triggered filter #${filterID}`)
         .addFields(responseFields)
         .setTimestamp();
-      const logsChannel = message.guild.channels.resolve(config.logChannel);
+      const logsChannel = message.guild.channels.resolve(config.autologChannel);
       logsChannel.send({ embeds: [response] });
     }
   });

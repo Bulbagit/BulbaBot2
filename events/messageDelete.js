@@ -8,7 +8,7 @@ import config from "../config.js";
 export const name = Events.MessageDelete;
 export async function execute(message) {
   const guild = await message.client.guilds.fetch(config.guildID);
-  const logsChannel = await guild.channels.fetch(config.logChannel);
+  const logsChannel = await guild.channels.fetch(config.autologChannel);
   if (
     message.content.toLowerCase().includes("https://discord.gg") ||
     message.mentions.members?.size >= 7
