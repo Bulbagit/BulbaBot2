@@ -47,7 +47,7 @@ export async function execute(message) {
     }
   }
 
-  //Disable invites
+  // Disable invites
   const logsChannel = message.guild.channels.resolve(config.autologChannel);
   const modRole = await message.guild.roles.fetch(config.modID);
   // Mods and up are exempt from this restriction
@@ -130,7 +130,7 @@ export async function filterMessage(message) {
       }
     }
     if (flags.indexOf("i") === -1) {
-      // Case insensitive by default
+      // Case-insensitive by default
       flags.splice(flags.indexOf("i"), 1);
       term = term.toLowerCase();
       text = text.toLowerCase();

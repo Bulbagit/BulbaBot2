@@ -32,6 +32,9 @@ export async function execute(message) {
       .setTimestamp();
     return logsChannel.send({ embeds: [response] });
   }
+  let messageText = message.content;
+  if (message.content?.length > 1024)
+    messageText = message.content.substring(0, 1021) + "...";
   const response = new EmbedBuilder()
     .setColor(config.messageColors.messageDelete)
     .setTitle(`Message Deleted by ${message.author.username}`)
@@ -39,7 +42,7 @@ export async function execute(message) {
     .setDescription(`Message sent by <@!${message.author.id}> deleted.`)
     .addFields({
       name: `Message in ${message.channel.toString()}`,
-      value: message.content,
+      value: messageText,
     })
     .setFooter({ text: `ID: ${message.author.id}` })
     .setTimestamp();
