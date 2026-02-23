@@ -34,7 +34,6 @@ export const data = new SlashCommandBuilder()
   );
 export async function execute(interaction) {
   const reportedUser = interaction.options.getUser("user");
-  console.log(reportedUser);
   const reason = interaction.options.getString("reason");
   const channel = interaction.options.getChannel("channel");
   const reportsChannel = await interaction.guild.channels.fetch(config.reportChannel);
