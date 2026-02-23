@@ -3,7 +3,7 @@
  * Report a user for poor behavior
  */
 
-import { EmbedBuilder, MessageFlags, SlashCommandBuilder, userMention } from "discord.js";
+import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
 import Sequelize from "sequelize";
 import config from "../../config.js";
 import { ReportLogs } from "../../includes/index.js";
@@ -25,10 +25,18 @@ export const data = new SlashCommandBuilder()
       .setName("reason")
       .setDescription("How the user in question is breaking the rules.")
       .setRequired(true)
+  )
+  .addChannelOption((channel) =>
+    channel
+      .setName("channel")
+      .setDescription("The channel in which the incident occurred.")
+      .setRequired(true)
   );
 export async function execute(interaction) {
   const reportedUser = interaction.options.getUser("user");
+  console.log(reportedUser);
   const reason = interaction.options.getString("reason");
+  const channel = interaction.options.getChannel("channel");
   const reportsChannel = await interaction.guild.channels.fetch(config.reportChannel);
   const reportingUser = interaction.user;
 
@@ -38,9 +46,10 @@ export async function execute(interaction) {
         reportedID: reportedUser.id,
         reporterID: reportingUser.id,
         message: reason,
+        channel: channel.id,
       }).catch((err) => console.log(err));
     })
-    .then(() => {
+    .then((report) => {
       const response = new EmbedBuilder()
         .setTitle("New Report")
         .setDescription(`Report made against user ${reportedUser.username}`)
@@ -48,10 +57,12 @@ export async function execute(interaction) {
         .addFields(
           {
             name: "User (ID)",
-            value: `${userMention(reportedUser)} (${reportedUser.id})`,
+            value: `${reportedUser} (${reportedUser.id})`,
           },
-          { name: "Message", value: reason }
+          { name: "Message", value: reason },
+          { name: "Channel", value: channel.toString()},
         )
+        .setFooter({text: `Report ID: #${report.id}`})
         .setTimestamp();
       reportsChannel.send({ embeds: [response] });
       interaction.reply({
@@ -68,15 +79,17 @@ export async function execute(interaction) {
         .addFields(
           {
             name: "User (ID)",
-            value: `${userMention(reportedUser.id)} (${reportedUser.id})`,
+            value: `${reportedUser} (${reportedUser.id})`,
           },
           { name: "Message", value: reason },
+          { name: "Channel", value: channel.toString()},
           {
             name: "Warning!",
             value:
               "This report was not logged to the database due to an error. Please contact the bot's administrator.",
           }
         )
+        .setFooter({ text: "Report ID: N/A (Database error)" })
         .setTimestamp();
       reportsChannel.send({ embeds: [response] });
       interaction.reply({

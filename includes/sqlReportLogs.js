@@ -33,6 +33,10 @@ ReportLogs.init(
       type: TEXT,
       allowNull: false,
     },
+    channel: {
+      type: BIGINT(20),
+      allowNull: false,
+    },
     time: {
       type: DATE,
       allowNull: false,
