@@ -3,7 +3,7 @@
  * Contains the sequelize class for the moderation logs table.
  */
 
-import { Model as _Model, BIGINT, DATE, literal, STRING } from "sequelize";
+import { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
 import sequelize from "./database.js";
 
 const Model = _Model;
@@ -33,11 +33,11 @@ ModLogs.init(
         allowNull: false
     },*/,
     logName: {
-      type: STRING,
+      type: TEXT,
       allowNull: false,
     },
     message: {
-      type: STRING,
+      type: TEXT,
       allowNull: false,
     },
     logTime: {
