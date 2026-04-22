@@ -32,7 +32,10 @@ jobs:
             echo "Dependencies installed. Backing up database..."
             mysqldump bulbabot --no-tablespaces > backups/bulbabot_$(date +%Y-%m-%d_%H-%M-%S).sql
             
-            echo "Database backup complete. Running migrations..."
+            echo "Database backup complete. Cleaning old backups..."
+            find backups/ -name "bulbabot_*.sql" -type f -mtime +7 -delete
+            
+            echo "Old backups cleaned. Running migrations..."
             npm run db:migrate
             
             echo "Migrations complete. Restarting..."
