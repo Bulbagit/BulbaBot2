@@ -3,14 +3,8 @@
  * Contains the sequelize class for the moderation logs table.
  */
 
-import Sequelize, { Model as _Model, BIGINT, DATE, literal, STRING } from "sequelize";
-import config from "../config.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
+import { Model as _Model, BIGINT, DATE, literal, STRING } from "sequelize";
+import sequelize from "./database.js";
 
 const Model = _Model;
 class ModLogs extends Model {}
@@ -63,9 +57,5 @@ ModLogs.init(
     timestamps: false,
   }
 );
-
-ModLogs.sync().catch((err) => {
-  console.log(err);
-});
 
 export default ModLogs;

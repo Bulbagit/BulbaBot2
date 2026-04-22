@@ -4,15 +4,10 @@
  */
 
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import Sequelize, { literal } from "sequelize";
+import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs, Mutes } from "../../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
+import { literal } from "sequelize";
 
 export const data = new SlashCommandBuilder()
   .setName("mute")

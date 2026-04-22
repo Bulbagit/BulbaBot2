@@ -3,15 +3,9 @@
  * Remove a user from the server without barring them from re-entry.
  */
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import Sequelize from "sequelize";
+import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
 
 export const data = new SlashCommandBuilder()
   .setName("kick")

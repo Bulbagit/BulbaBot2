@@ -24,13 +24,13 @@ export async function execute(oldMessage, newMessage) {
     return console.log(
       `Strange behavior on message update. newMessage:\n${newMessage}\noldMessage:\n${oldMessage}`
     );
-  let oldContent = oldMessage.content, newContent = newMessage.content;
+  let oldContent = oldMessage.content,
+    newContent = newMessage.content;
   // Avoid sending invalid data to the embed fields.
   if (!oldMessage.content) oldContent = "*[No text]*";
   if (oldMessage.content?.length > 1024) oldContent = oldMessage.content.substring(0, 1021) + "...";
   if (!newMessage.content) newContent = "*[No text]*";
   if (newMessage.content?.length > 1024) newContent = newMessage.content.substring(0, 1021) + "...";
-
 
   const logsChannel = await oldMessage.guild.channels.fetch(config.autologChannel);
   const response = new EmbedBuilder()

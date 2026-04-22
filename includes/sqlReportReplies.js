@@ -1,14 +1,13 @@
 // @ts-check
 /*
- * Contains the sequelize class for the mutes table.
- * This table is referenced on restart to requeue any unmutes that were pending.
+ * Contains replies to reports and subsequent conversations between mod and user.
  */
-
 import { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
 import sequelize from "./database.js";
 
-class Mutes extends _Model {}
-Mutes.init(
+class ReportReplies extends _Model {}
+
+ReportReplies.init(
   {
     id: {
       type: BIGINT(20),
@@ -16,31 +15,33 @@ Mutes.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    mutedID: {
+    reportId: {
+      type: BIGINT(20),
+      allowNull: false,
+      references: {
+        model: "reportlogs",
+        key: "id",
+      },
+      onUpdate: "CASCADE",
+      onDelete: "CASCADE", // Delete all replies associated with a report if the report is deleted
+    },
+    senderId: {
       type: BIGINT(20),
       allowNull: false,
     },
-    mutedName: {
+    message: {
       type: TEXT,
       allowNull: false,
     },
-    duration: {
-      type: TEXT,
-      allowNull: false,
-    },
-    mutedTime: {
+    time: {
       type: DATE,
+      allowNull: false,
       defaultValue: literal("CURRENT_TIMESTAMP"),
-      allowNull: false,
-    },
-    unmutedTime: {
-      type: DATE,
-      allowNull: false,
     },
   },
   {
     sequelize,
-    modelName: "mutes",
+    modelName: "reportreplies",
     // Sequelize will pluralize table names by default
     // For consistency, we stop this behavior
     freezeTableName: true,
@@ -51,4 +52,4 @@ Mutes.init(
   }
 );
 
-export default Mutes;
+export default ReportReplies;

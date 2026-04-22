@@ -3,14 +3,8 @@
  * Contains the sequelize class for the blacklist table.
  */
 
-import Sequelize, { Model as _Model, BIGINT, STRING } from "sequelize";
-import config from "../config.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
+import { Model as _Model, BIGINT, STRING } from "sequelize";
+import sequelize from "./database.js";
 
 const Model = _Model;
 class Blacklist extends Model {}
@@ -54,7 +48,5 @@ Blacklist.init(
     timestamps: false,
   }
 );
-
-Blacklist.sync();
 
 export default Blacklist;

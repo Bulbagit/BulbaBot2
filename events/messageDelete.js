@@ -33,8 +33,7 @@ export async function execute(message) {
     return logsChannel.send({ embeds: [response] });
   }
   let messageText = message.content;
-  if (message.content?.length > 1024)
-    messageText = message.content.substring(0, 1021) + "...";
+  if (message.content?.length > 1024) messageText = message.content.substring(0, 1021) + "...";
   const response = new EmbedBuilder()
     .setColor(config.messageColors.messageDelete)
     .setTitle(`Message Deleted by ${message.author.username}`)

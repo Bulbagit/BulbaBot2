@@ -4,15 +4,9 @@
  */
 
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
-import Sequelize from "sequelize";
+import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ReportLogs } from "../../includes/index.js";
-
-const sequelize = new Sequelize(config.database, config.dbuser, config.dbpass, {
-  host: config.dbhost,
-  dialect: "mysql",
-  logging: false,
-});
 
 export const data = new SlashCommandBuilder()
   .setName("report")
@@ -59,9 +53,9 @@ export async function execute(interaction) {
             value: `${reportedUser} (${reportedUser.id})`,
           },
           { name: "Message", value: reason },
-          { name: "Channel", value: channel.toString()},
+          { name: "Channel", value: channel.toString() }
         )
-        .setFooter({text: `Report ID: #${report.id}`})
+        .setFooter({ text: `Report ID: #${report.id}` })
         .setTimestamp();
       reportsChannel.send({ embeds: [response] });
       interaction.reply({
@@ -81,7 +75,7 @@ export async function execute(interaction) {
             value: `${reportedUser} (${reportedUser.id})`,
           },
           { name: "Message", value: reason },
-          { name: "Channel", value: channel.toString()},
+          { name: "Channel", value: channel.toString() },
           {
             name: "Warning!",
             value:

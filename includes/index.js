@@ -1,6 +1,18 @@
 //@ts-check
 
-export { default as Blacklist } from "./sqlBlacklist.js";
-export { default as ModLogs } from "./sqlModLogs.js";
-export { default as Mutes } from "./sqlMutes.js";
-export { default as ReportLogs } from "./sqlReportLogs.js";
+import Blacklist from "./sqlBlacklist.js";
+import ModLogs from "./sqlModLogs.js";
+import Mutes from "./sqlMutes.js";
+import ReportLogs from "./sqlReportLogs.js";
+import ReportReplies from "./sqlReportReplies.js";
+
+ReportLogs.hasMany(ReportReplies, {
+  foreignKey: "reportId",
+  as: "replies",
+});
+
+ReportReplies.belongsTo(ReportLogs, {
+  foreignKey: "reportId",
+});
+
+export { Blacklist, ModLogs, Mutes, ReportLogs, ReportReplies };
