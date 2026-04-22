@@ -30,7 +30,7 @@ jobs:
             npm ci
             
             echo "Dependencies installed. Backing up database..."
-            mysqldump --no-tablespaces bulbabot > backups/databaseBackup.sql
+            mysqldump bulbabot --no-tablespaces > backups/bulbabot_$(date +%Y-%m-%d_%H-%M-%S).sql
             
             echo "Database backup complete. Running migrations..."
             npm run db:migrate
