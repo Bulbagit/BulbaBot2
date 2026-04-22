@@ -38,7 +38,10 @@ jobs:
             echo "Old backups cleaned. Running migrations..."
             npm run db:migrate
             
-            echo "Migrations complete. Restarting..."
+            echo "Migrations complete. Ensuring ownership is correct..."
+            sudo /usr/bin/chown -R ubuntu:ubuntu /home/ubuntu/BulbaBot2
+            
+            echo "File ownership changed. Restarting..."
             sudo /bin/systemctl restart bulbabot
             
             echo "Deployment complete."
