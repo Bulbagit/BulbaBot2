@@ -14,3 +14,7 @@ bun.lockb
 # environment variables
 .env
 config.js
+
+# backups
+/backups/
+*.sql
