@@ -30,20 +30,29 @@ export async function execute(message) {
         let data = response.body;
         if (Array.isArray(data) && data[3] && data[3].length > 0) {
           const firstLink = data[3][0];
-          return message.reply(firstLink);
+          return message.reply({
+            content: firstLink,
+            allowedMentions: { repliedUser: false },
+          });
         } else {
-          return message.reply(
-            "No results found. Ensure you haven't made any typos or if the page exists!"
-          );
+          return message.reply({
+            content: "No results found. Ensure you haven't made any typos or if the page exists!",
+            allowedMentions: { repliedUser: false },
+          });
         }
       } else {
-        return message.reply("Failed to fetch data from Bulbapedia. Please try again.");
+        return message.reply({
+          content: "Failed to fetch data from Bulbapedia. Please try again.",
+          allowedMentions: { repliedUser: false },
+        });
       }
     } catch (error) {
       console.error(error);
-      return message.reply(
-        "An error occurred while fetching data. An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please report on <#370291387050098689>."
-      );
+      return message.reply({
+        content:
+          "An error occurred while fetching data. An error occurred while fetching data. Make sure you spelled the search correctly, or if the page really exists. If you believe this is an error, please report on <#370291387050098689>.",
+        allowedMentions: { repliedUser: false },
+      });
     }
   }
 
