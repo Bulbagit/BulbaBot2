@@ -18,6 +18,9 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            # Stop execution if anything fails
+            set -e
+            
             cd /home/ubuntu/BulbaBot2
             
             echo "Updating BulbaBot..."
@@ -27,7 +30,7 @@ jobs:
             npm ci
             
             echo "Dependencies installed. Backing up database..."
-            mysqldump bulbabot > backups/databaseBackup.sql
+            mysqldump --no-tablespaces bulbabot > backups/databaseBackup.sql
             
             echo "Database backup complete. Running migrations..."
             npm run db:migrate
