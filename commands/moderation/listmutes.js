@@ -3,7 +3,10 @@
  * List active mutes in the database.
  */
 
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import {
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import config from "../../config.js";
 import { Mutes } from "../../includes/index.js";
 

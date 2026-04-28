@@ -3,7 +3,11 @@
  * Report a user for poor behavior
  */
 
-import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import {
+  EmbedBuilder,
+  MessageFlags,
+  SlashCommandBuilder,
+} from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ReportLogs } from "../../includes/index.js";

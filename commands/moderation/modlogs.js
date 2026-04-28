@@ -1,5 +1,8 @@
 // @ts-check
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import {
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
 

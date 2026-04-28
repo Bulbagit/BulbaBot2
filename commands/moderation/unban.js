@@ -2,7 +2,10 @@
 /**
  * Lift a ban from a user.
  */
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import {
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
