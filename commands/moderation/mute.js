@@ -5,16 +5,20 @@
 
 import {
   EmbedBuilder,
+  MessageFlags,
+  PermissionFlagsBits,
   SlashCommandBuilder,
 } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs, Mutes } from "../../includes/index.js";
 import { literal } from "sequelize";
+import { canModerate, getDuration } from "../../includes/utils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("mute")
   .setDescription("Prevent a user from typing in text channels for a set period of time.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
@@ -28,42 +32,40 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const logsChannel = await interaction.guild.channels.fetch(config.logChannel);
   const user = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
-  // Not a mod; cannot use this command
-  if (interaction.member.roles.highest.position < modRole.position) {
+  const member = await interaction.guild.members.fetch(user).catch((err) => console.log(err));
+  if (!canModerate(interaction.member, member)) {
     interaction.client.emit("unauthorized", interaction.client, interaction.user, {
       command: "mute",
       details: `${interaction.user.username} attempted to mute user #${user.username} with reason ${reason}`,
     });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
-  const member = await interaction.guild.members.fetch(user).catch((err) => console.log(err));
-  // Target is a mod. Abort.
-  if (member.roles.highest.position >= modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "mute",
-      details: `User ${interaction.user.username} attempted to mute ${user.username}, giving the reason "${reason}"`,
+    return interaction.reply({
+      content:
+        "You do not have permission to moderate this user because their role is equal to or higher than yours. This incident has been logged.",
+      flags: MessageFlags.Ephemeral,
     });
-    return interaction.reply(
-      "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
-    );
   }
+
   if (member.roles.cache.has(config.muteID))
     return interaction.reply({
       content: `This user is already muted. (User: ${member.user.username})`,
+      flags: MessageFlags.Ephemeral,
+    });
+  if (member.roles.cache.has(config.muteID))
+    return interaction.reply({
+      content: `This user is already muted. (User: ${member.user.username})`,
+      flags: MessageFlags.Ephemeral,
     });
   // Parse user input
   const userDuration = interaction.options.getString("duration");
-  let duration = this.getDuration(userDuration);
+  let duration = getDuration(userDuration);
   if (!duration)
     return interaction.reply({
       content:
         "Your format for the duration is not correct. You can specify days (d), hours (h), or minutes(m).",
+      flags: MessageFlags.Ephemeral,
     });
   const interval = duration[1];
   duration = duration[0];
@@ -104,7 +106,6 @@ export async function execute(interaction) {
         .catch((err) => console.log(err));
     })
     .then(() => {
-      console.log("Transaction success.");
       // Transaction was successfully committed. Everything is A-OK.
       user
         .send({
@@ -167,27 +168,4 @@ export async function execute(interaction) {
         embeds: [response],
       });
     });
-}
-export function getDuration(arg) {
-  const measure = arg.trim().toLowerCase().slice(-1);
-  const time = parseInt(arg, 10);
-  let duration = 1;
-  let interval = "INTERVAL " + time.toString();
-  switch (measure) {
-    case "d":
-      interval += " DAY";
-      duration = time * 24 * 60 * 60; // d*h*m*s
-      break;
-    case "h":
-      interval += " HOUR";
-      duration = time * 60 * 60; // h*m*s
-      break;
-    case "m":
-      interval += " MINUTE";
-      duration = time * 60; // m*s
-      break;
-    default:
-      return false; // Don't recognize the format
-  }
-  return [duration * 1000, interval];
 }

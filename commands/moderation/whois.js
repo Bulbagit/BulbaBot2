@@ -3,10 +3,7 @@
  * Gather all information about a user.
  */
 
-import {
-  EmbedBuilder,
-  SlashCommandBuilder,
-} from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
 
 export const data = new SlashCommandBuilder()

@@ -2,14 +2,16 @@
 /**
  * Remove a user from the server and prevent them from re-joining.
  */
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
+import { canModerate } from "../../includes/utils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ban")
   .setDescription("Remove a user from the server and prevent them from re-joining.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
   .addStringOption((reason) =>
     reason.setName("reason").setDescription("Reason for ban.").setRequired(true)
   )
@@ -36,35 +38,25 @@ export async function execute(interaction) {
   }
 
   if (isInServer) {
-    const modRole = await interaction.guild.roles.fetch(config.modID);
-    if (
-      !interaction.member.roles.cache.has(config.modID) &&
-      !interaction.user.id !== config.adminID &&
-      interaction.member.roles.highest.position < modRole.position
-    ) {
+    if (!canModerate(interaction.member, isInServer)) {
       interaction.client.emit("unauthorized", interaction.client, interaction.user, {
         command: "ban",
         details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
       });
 
-      return interaction.reply(
-        "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-      );
-    }
-    if (isInServer.roles.highest.position >= modRole.position) {
-      interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-        command: "ban",
-        details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
+      return interaction.reply({
+        content:
+          "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged.",
+        flags: MessageFlags.Ephemeral,
       });
-
-      return interaction.reply(
-        "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
-      );
     }
   }
 
   if (member.id === config.clientID)
-    return interaction.reply("I can't remove myself from the server.");
+    return interaction.reply({
+      content: "I can't remove myself from the server.",
+      flags: MessageFlags.Ephemeral,
+    });
 
   // Log the ban
   await sequelize
