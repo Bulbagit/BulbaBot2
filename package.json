@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node index.js",
     "db:migrate": "node sync-db.js",
+    "deploy-commands": "node deploy-commands.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

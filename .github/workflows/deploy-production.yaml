@@ -41,7 +41,10 @@ jobs:
             echo "Migrations complete. Ensuring ownership is correct..."
             sudo /usr/bin/chown -R ubuntu:ubuntu /home/ubuntu/BulbaBot2
             
-            echo "File ownership changed. Restarting..."
+            echo "File ownership changed. Deploying commands..."
+            npm run deploy-commands
+            
+            echo "Commands deployed. Restarting..."
             sudo /bin/systemctl restart bulbabot
             
             echo "Deployment complete."
