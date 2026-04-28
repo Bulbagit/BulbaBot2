@@ -3,12 +3,7 @@
  * Mute a user.
  */
 
-import {
-  EmbedBuilder,
-  MessageFlags,
-  PermissionFlagsBits,
-  SlashCommandBuilder,
-} from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs, Mutes } from "../../includes/index.js";

@@ -2,14 +2,16 @@
 /**
  * Remove a user from the server without barring them from re-entry.
  */
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
+import { canModerate } from "../../includes/utils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("kick")
   .setDescription("Remove a user from the server.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
@@ -19,35 +21,29 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const user = interaction.options.getUser("user");
   const member = await interaction.guild.members.fetch(user);
-  if (!member) return interaction.reply("Member is not present in server.");
+  if (!member)
+    return interaction.reply({
+      content: "Member is not present in server.",
+      flags: MessageFlags.Ephemeral,
+    });
   const reason = interaction.options.getString("reason");
-  const modRole = await interaction.guild.roles.fetch(config.modID);
-  if (
-    !interaction.member.roles.cache.has(config.modID) &&
-    !interaction.user.id !== config.adminID &&
-    interaction.member.roles.highest.position < modRole.position
-  ) {
+  if (!canModerate(interaction.member, member)) {
     interaction.client.emit("unauthorized", interaction.client, interaction.user, {
       command: "kick",
-      target: user,
-      reason: reason,
+      details: `User ${interaction.user.username} attempted to kick ${member.username}, giving the reason "${reason}"`,
     });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
-  if (member.roles.highest.position >= modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "kick",
-      target: user,
-      reason: reason,
+
+    return interaction.reply({
+      content:
+        "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged.",
+      flags: MessageFlags.Ephemeral,
     });
-    return interaction.reply(
-      "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged."
-    );
   }
   if (member.id === config.clientID)
-    return interaction.reply("I can't remove myself from the server.");
+    return interaction.reply({
+      content: "I can't remove myself from the server.",
+      flags: MessageFlags.Ephemeral,
+    });
   // Log the kick
   await sequelize
     .transaction(() => {
