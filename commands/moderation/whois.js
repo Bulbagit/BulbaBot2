@@ -3,27 +3,19 @@
  * Gather all information about a user.
  */
 
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
 
 export const data = new SlashCommandBuilder()
   .setName("whois")
   .setDescription("Displays information about a user account.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addUserOption((user) =>
     user.setName("user").setDescription("User to inspect.").setRequired(true)
   );
 export async function execute(interaction) {
   let user = interaction.options.getUser("user");
-  const modRole = await interaction.guild.roles.fetch(config.modID);
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "whois",
-      details: `${interaction.user.username} attempted to whois ${user.username}`,
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
+
   const member = await interaction.guild.members.fetch(user).catch((err) => {
     console.log(err);
   });
@@ -45,22 +37,15 @@ export async function execute(interaction) {
     if (!status.length) status.push("N/A");
     if (!game?.length) game.push("None");
   }
-  let roles = {};
-  if (!member) roles = "Not in server";
-  else {
-    roles.name = "Roles";
-    roles.value =
+  let rolesField = { name: "Roles", value: "Not in server", inline: false };
+
+  if (member) {
+    rolesField.value =
       member.roles.cache.size > 1
         ? member.roles.cache
-            .map((role) => {
-              if (role.name !== "@everyone") return role.name + ", ";
-            })
-            .filter((role) => {
-              return role !== null;
-            })
-            .join("")
-            .trim()
-            .slice(0, -1)
+            .filter((role) => role.name !== "@everyone")
+            .map((role) => role.name)
+            .join(", ")
         : "None";
   }
   const response = new EmbedBuilder()
@@ -90,6 +75,7 @@ export async function execute(interaction) {
         inline: true,
       },
       { name: "Registered", value: user.createdAt.toString(), inline: true },
+      rolesField,
     ])
     .setTimestamp();
   return interaction.reply({ embeds: [response] });

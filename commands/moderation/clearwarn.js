@@ -8,6 +8,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
   MessageFlags,
+  PermissionFlagsBits,
   SlashCommandBuilder,
 } from "discord.js";
 import config from "../../config.js";
@@ -16,23 +17,12 @@ import { ModLogs } from "../../includes/index.js";
 export const data = new SlashCommandBuilder()
   .setName("clearwarn")
   .setDescription("Remove a warning from a user.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addIntegerOption((warning) =>
     warning.setName("warning").setDescription("The warning ID to remove.").setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const warnID = interaction.options.getInteger("warning");
-
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "clearwarn",
-      details: `${interaction.user.username} attempted to clear warning ${warnID}`,
-    });
-
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
 
   const warning = await ModLogs.findOne({
     where: {

@@ -1,27 +1,17 @@
 // @ts-check
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
 
 export const data = new SlashCommandBuilder()
   .setName("modlogs")
   .setDescription("Check logged moderation actions taken against a user.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user.").setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const user = interaction.options.getUser("user");
-  if (interaction.member.roles.highest.position < modRole.position) {
-    // Not authorized to perform this action; warn mods
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      target: user,
-      command: "modlogs",
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
 
   const warnings = await ModLogs.findAll({
     where: {

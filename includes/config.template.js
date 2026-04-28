@@ -15,7 +15,6 @@ const config = {
   logChannel: "",
   autologChannel: "",
   reportChannel: "",
-  modID: "",
   muteID: "",
   noInvites: "false",
   mentionLimit: "false",

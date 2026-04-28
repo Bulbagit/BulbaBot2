@@ -3,7 +3,7 @@
  * This handler fires whenever any message is sent.
  * It is used to check message contents, as well as enforce filters.
  */
-import { EmbedBuilder, Events } from "discord.js";
+import { EmbedBuilder, Events, PermissionFlagsBits } from "discord.js";
 import needle from "needle";
 import { Op as _Op, literal } from "sequelize";
 import config from "../config.js";
@@ -58,13 +58,11 @@ export async function execute(message) {
 
   // Disable invites
   const logsChannel = message.guild.channels.resolve(config.autologChannel);
-  const modRole = await message.guild.roles.fetch(config.modID);
-  // Mods and up are exempt from this restriction
   const member = await message.guild.members.fetch(message.author);
   if (
     config.noInvites &&
     message.content.toLowerCase().includes("discord.gg") &&
-    member.roles.highest.position < modRole.position
+    !member.permissions.has(PermissionFlagsBits.ManageMessages)
   ) {
     try {
       await message.delete();

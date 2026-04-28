@@ -2,7 +2,7 @@
 /**
  * Lift a ban from a user.
  */
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
@@ -10,6 +10,7 @@ import { ModLogs } from "../../includes/index.js";
 export const data = new SlashCommandBuilder()
   .setName("unban")
   .setDescription("Remove a ban from a user, allowing them to rejoin.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
   .addStringOption((user) =>
     user.setName("user").setDescription(`The banned user's ID.`).setRequired(true)
   )
@@ -19,23 +20,13 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const userID = interaction.options.getString("user");
   const user = await interaction.client.users.fetch(userID);
-  if (!user) return interaction.reply(`No user found with ID ${userID}.`);
-  const reason = interaction.options.getString("reason");
-  const modRole = await interaction.guild.roles.fetch(config.modID);
-  if (
-    !interaction.member.roles.cache.has(config.modID) &&
-    !interaction.user.id !== config.adminID &&
-    interaction.member.roles.highest.position < modRole.position
-  ) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "unban",
-      details: "",
+  if (!user)
+    return interaction.reply({
+      content: `No user found with ID ${userID}.`,
+      flags: MessageFlags.Ephemeral,
     });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
-  // Log this
+  const reason = interaction.options.getString("reason");
+
   await sequelize
     .transaction(() => {
       return ModLogs.create({

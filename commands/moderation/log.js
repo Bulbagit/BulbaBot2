@@ -2,7 +2,7 @@
 /**
  * Log a warning for a user.
  */
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import sequelize from "../../includes/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/index.js";
@@ -10,6 +10,7 @@ import { ModLogs } from "../../includes/index.js";
 export const data = new SlashCommandBuilder()
   .setName("log")
   .setDescription("Logs a warning for a user.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user.").setRequired(true)
   )
@@ -17,19 +18,8 @@ export const data = new SlashCommandBuilder()
     reason.setName("reason").setDescription("Reason for warning.").setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const user = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      target: user,
-      reason: reason,
-      command: "log",
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
 
   // Log the actual warning
   const results = await sequelize
@@ -44,9 +34,10 @@ export async function execute(interaction) {
     .catch((err) => {
       // Error. Log it and tell the mod it failed.
       console.log(err);
-      return interaction.reply(
-        `There was an error logging to database:\n${err}\nPlease inform the bot author.`
-      );
+      return interaction.reply({
+        content: `There was an error logging to database:\n${err}\nPlease inform the bot author.`,
+        flags: MessageFlags.Ephemeral,
+      });
     });
 
   // Success. Send the response.

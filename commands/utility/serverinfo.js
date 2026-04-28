@@ -3,24 +3,14 @@
  * Outputs general server information
  */
 
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
 
 export const data = new SlashCommandBuilder()
   .setName("serverinfo")
-  .setDescription("Get some general info about the server.");
+  .setDescription("Get some general info about the server.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "serverinfo",
-      details: `${interaction.user.username} attempted to view server info.
-                `,
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
   const members = interaction.guild.memberCount;
   const humans = interaction.guild.members.cache.filter((member) => !member.user.bot).size;
   const bots = members - humans;

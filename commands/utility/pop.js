@@ -2,12 +2,13 @@
 /**
  * Unarchive a channel.
  */
-import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
 
 export const data = new SlashCommandBuilder()
   .setName("pop")
   .setDescription("Unarchives a channel.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
   .addChannelOption((channel) =>
     channel.setName("channel").setDescription("The archived channel.").setRequired(true)
   )
@@ -18,17 +19,8 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const target = interaction.options.getChannel("channel");
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "pop",
-      details: `${interaction.user.username} attempted to pop the channel #${target}`,
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
+
   if (target.parentId !== config.archiveID)
     return interaction.reply({
       content: "Target must be an archived channel.",

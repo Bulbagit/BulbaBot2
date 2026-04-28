@@ -3,38 +3,44 @@
  * Unmute a user.
  */
 
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
-import { Mutes } from "../../includes/index.js";
+import { Mutes, ModLogs } from "../../includes/index.js";
+import sequelize from "../../includes/database.js";
 
 export const data = new SlashCommandBuilder()
   .setName("unmute")
   .setDescription("Manually remove a mute from a user.")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addUserOption((user) => user.setName("user").setDescription("The muted user.").setRequired(true))
   .addStringOption((reason) =>
     reason.setName("reason").setDescription("Reason for removing the mute.").setRequired(true)
   );
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
   const logsChannel = await interaction.guild.channels.fetch(config.logChannel);
   const user = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
-  // Not a mod; cannot use this command
-  if (interaction.member.roles.highest.position < modRole.position) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "unmute",
-      details: `${interaction.user.username} attempted to unmute user #${user.username} with reason ${reason}`,
-    });
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
+
   const member = await interaction.guild.members.fetch(user);
   if (!member.roles.cache.has(config.muteID))
-    return interaction.reply("This user is not currently muted.");
+    return interaction.reply({
+      content: "This user is not currently muted.",
+      flags: MessageFlags.Ephemeral,
+    });
   member.roles
     .remove(config.muteID)
-    .then(() => {
+    .then(async () => {
+      await sequelize
+        .transaction(() => {
+          return ModLogs.create({
+            loggedID: user.id,
+            loggerID: interaction.user.id,
+            logName: "unmute",
+            message: reason,
+          });
+        })
+        .catch((err) => console.log(err));
+
       Mutes.destroy({ where: { mutedID: user.id } })
         .then(() => {
           const response = new EmbedBuilder()
@@ -43,7 +49,9 @@ export async function execute(interaction) {
             .setDescription(
               `User ${user.username} was manually unmuted by ${interaction.user.username}.`
             )
+            .addFields([{ name: "Reason", value: reason }]) // NEW: Added to Embed
             .setTimestamp();
+
           logsChannel.send({ embeds: [response] });
           return interaction.reply({ embeds: [response] });
         })
@@ -55,17 +63,21 @@ export async function execute(interaction) {
             .setDescription(
               `User ${user.username} was manually unmuted by ${interaction.user.username}.`
             )
+            .addFields([{ name: "Reason", value: reason }])
             .setTimestamp();
-          interaction.channel.send({
-            content:
-              `The "muted" role has been removed, but there was a problem removing the mute from the database.` +
-              ` Please inform the bot's administrator.`,
+
+          interaction.reply({
+            // Changed from channel.send to reply
+            content: `The "muted" role has been removed, but there was a problem removing the mute from the database. Please inform the bot's administrator.`,
             embeds: [response],
+            flags: MessageFlags.Ephemeral,
           });
         });
+
       user
         .send({
-          content: `You have been manually unmuted in ${interaction.guild.name} by a moderator.`,
+          // NEW: Included the reason in the direct message
+          content: `You have been manually unmuted in ${interaction.guild.name} by a moderator.\nReason: ${reason}`,
         })
         .catch((err) => {
           console.log(err);
@@ -73,8 +85,10 @@ export async function execute(interaction) {
     })
     .catch((err) => {
       console.log(err);
-      return interaction.reply(
-        "There was an error removing the muted role. Please inform the bot's administrator."
-      );
+      return interaction.reply({
+        content:
+          "There was an error removing the muted role. Please inform the bot's administrator.",
+        flags: MessageFlags.Ephemeral,
+      });
     });
 }

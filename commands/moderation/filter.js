@@ -7,6 +7,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  PermissionFlagsBits,
   SlashCommandBuilder,
 } from "discord.js";
 import config from "../../config.js";
@@ -15,6 +16,7 @@ import { Blacklist } from "../../includes/index.js";
 export const data = new SlashCommandBuilder()
   .setName("filter")
   .setDescription("Access BulbaBot's blacklist settings")
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
   .addSubcommand((add) =>
     add
       .setName("add")
@@ -78,23 +80,6 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((list) => list.setName("list").setDescription("List all current filters."))
   .addSubcommand((help) => help.setName("help").setDescription("Get help with the filter system."));
 export async function execute(interaction) {
-  const modRole = await interaction.guild.roles.fetch(config.modID);
-
-  if (
-    !interaction.member.roles.cache.has(config.modID) &&
-    !interaction.user.id !== config.adminID &&
-    interaction.member.roles.highest.position < modRole.position
-  ) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "filter",
-      details: "User ${interaction.user.username} attempted to interact with filters.",
-    });
-
-    return interaction.reply(
-      "You are not authorized to perform this command. Repeated attempts to perform unauthorized actions may result in a ban."
-    );
-  }
-
   const subcommand = interaction.options.getSubcommand();
   switch (subcommand) {
     case "help": {
@@ -208,7 +193,7 @@ export async function execute(interaction) {
       if (options) {
         optionsArr = options.split(",");
 
-        const validOptions = this.validateOptions(optionsArr, flagsArr);
+        const validOptions = validateOptions(optionsArr, flagsArr);
         console.log(validOptions);
 
         if (validOptions[1].length !== 0)
@@ -218,7 +203,7 @@ export async function execute(interaction) {
           );
       }
 
-      const check = this.validateFlags(flagsArr, optionsArr);
+      const check = validateFlags(flagsArr, optionsArr);
       const finalFlags = check[0].join(",");
       let finalOptions = check[1].join(",");
 
@@ -408,10 +393,14 @@ export async function execute(interaction) {
       if (!editFlags) editFlags = filter.getDataValue("flags");
       if (!editOptions) editOptions = filter.getDataValue("options");
 
-      const validate = this.validateFlags(editFlags.split(","), editOptions.split(","));
+      let finalEditFlags = editFlags;
+      let finalEditOptions = editOptions;
 
-      const finalEditFlags = validate[0].join(",");
-      const finalEditOptions = validate[1].join(",");
+      if (editOptions && editOptions !== "none") {
+        const validate = validateFlags(editFlags.split(","), editOptions.split(","));
+        finalEditFlags = validate[0].join(",");
+        finalEditOptions = validate[1].join(",");
+      }
 
       filter
         .update({
