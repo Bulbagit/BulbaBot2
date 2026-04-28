@@ -32,18 +32,18 @@ export async function execute(interaction) {
   if (target.parentId !== config.archiveID)
     return interaction.reply({
       content: "Target must be an archived channel.",
-      flags: MessageFlags.Epehemeral,
+      flags: MessageFlags.Ephemeral,
     });
   const category = interaction.options.getChannel("category");
   if (category.constructor.name !== "CategoryChannel")
     return interaction.reply({
       content: `#${category.name} is not a category.`,
-      flags: MessageFlags.Epehemeral,
+      flags: MessageFlags.Ephemeral,
     });
   if (category.id === config.archiveID)
     return interaction.reply({
       content: "You must choose a category other than the archives.",
-      flags: MessageFlags.Epehemeral,
+      flags: MessageFlags.Ephemeral,
     });
 
   target.setParent(category);

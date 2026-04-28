@@ -87,7 +87,7 @@ export async function execute(interaction) {
       reportsChannel.send({ embeds: [response] });
       interaction.reply({
         content: "Your report has been submitted for review.",
-        flags: MessageFlags.Epehemeral,
+        flags: MessageFlags.Ephemeral,
       });
     });
 }
