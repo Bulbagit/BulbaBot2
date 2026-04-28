@@ -10,6 +10,7 @@ const Op = _Op;
 
 export const name = Events.GuildMemberRemove;
 export async function execute(member) {
+  if (member.guild.id !== config.guildID) return;
   // Wait a few seconds so any kicks or bans can get logged and caught by our check
   setTimeout(this.checkRemoved, 2000, member);
 }
