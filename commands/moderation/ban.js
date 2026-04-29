@@ -26,14 +26,13 @@ export const data = new SlashCommandBuilder()
   );
 export async function execute(interaction) {
   const reason = interaction.options.getString("reason");
-  let user = interaction.options.getUser("user");
-  const member = await interaction.client.users.fetch(user);
-  const isInServer = await interaction.guild.members.resolve(user);
+  let targetUser = interaction.options.getUser("user");
+  const fullUser = await interaction.client.users.fetch(targetUser);
+  const isInServer = await interaction.guild.members.fetch(targetUser).catch(() => null);
   let purgeHoursStr = interaction.options.getString("purgehours");
-
   let purgeSeconds = 0;
 
-  if (!isNaN(purgeHoursStr)) {
+  if (purgeHoursStr !== null && !isNaN(Number(purgeHoursStr))) {
     purgeSeconds = Number(purgeHoursStr) * 60 * 60;
   }
 
@@ -41,7 +40,7 @@ export async function execute(interaction) {
     if (!canModerate(interaction.member, isInServer)) {
       interaction.client.emit("unauthorized", interaction.client, interaction.user, {
         command: "ban",
-        details: `User ${interaction.user.username} attempted to ban ${member.username}, giving the reason "${reason}"`,
+        details: `User ${interaction.user.username} attempted to ban ${fullUser.username}, giving the reason "${reason}"`,
       });
 
       return interaction.reply({
@@ -52,7 +51,7 @@ export async function execute(interaction) {
     }
   }
 
-  if (member.id === config.clientID)
+  if (fullUser.id === config.clientID)
     return interaction.reply({
       content: "I can't remove myself from the server.",
       flags: MessageFlags.Ephemeral,
@@ -62,7 +61,7 @@ export async function execute(interaction) {
   await sequelize
     .transaction(() => {
       return ModLogs.create({
-        loggedID: member.id,
+        loggedID: fullUser.id,
         loggerID: interaction.user.id,
         logName: "ban",
         message: reason,
@@ -82,17 +81,17 @@ export async function execute(interaction) {
     `\n${reason}` +
     `\nPlease be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`;
 
-  member
+  fullUser
     .send({
       content: message,
     })
     .then(() => {
       interaction.guild.members
-        .ban(member, { reason: reason, deleteMessageSeconds: purgeSeconds })
+        .ban(fullUser, { reason: reason, deleteMessageSeconds: purgeSeconds })
         .then(async () => {
           const channel = await interaction.client.channels.fetch(config.logChannel);
 
-          let lBanDescr = `Member @${member.username} has been banned from the server by @${interaction.user.username}.`;
+          let lBanDescr = `Member @${fullUser.username} has been banned from the server by @${interaction.user.username}.`;
 
           if (purgeSeconds > 0) {
             lBanDescr = lBanDescr + " (Purged messages for " + purgeHoursStr + " hour(s).)";
@@ -116,7 +115,7 @@ export async function execute(interaction) {
             .setColor(config.messageColors.error)
             .setTitle("Error banning user")
             .setDescription(
-              `An error occurred while trying to ban @${member.username}. The error is displayed below.`
+              `An error occurred while trying to ban @${fullUser.username}. The error is displayed below.`
             )
             .addFields([
               {
@@ -142,19 +141,19 @@ export async function execute(interaction) {
         .setColor(config.messageColors.error)
         .setTitle("Message Failed")
         .setDescription(
-          `Sending ban message to user @${member.username} failed. This is likely a result of their privacy settings.`
+          `Sending ban message to user @${fullUser.username} failed. This is likely a result of their privacy settings.`
         )
         .setTimestamp();
 
       channel.send({ embeds: [response] });
       interaction.guild.members
-        .ban(member, { reason: reason })
+        .ban(fullUser, { reason: reason, deleteMessageSeconds: purgeSeconds })
         .then(async () => {
           const response = new EmbedBuilder()
             .setColor(config.messageColors.memBan)
             .setTitle("Member banned")
             .setDescription(
-              `Member @${member.username} has been removed from the server by @${interaction.user.username}.`
+              `Member @${fullUser.username} has been removed from the server by @${interaction.user.username}.`
             )
             .addFields([{ name: "Reason", value: reason }])
             .setTimestamp();
@@ -169,7 +168,7 @@ export async function execute(interaction) {
             .setColor(config.messageColors.error)
             .setTitle("Error banning user")
             .setDescription(
-              `An error occurred while trying to ban @${member.username}. The error is displayed below.`
+              `An error occurred while trying to ban @${fullUser.username}. The error is displayed below.`
             )
             .addFields(
               { name: "Error", value: err },
