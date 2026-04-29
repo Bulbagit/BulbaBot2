@@ -12,16 +12,22 @@ jobs:
     steps:
       - name: Update BulbaBot to the latest code
         uses: appleboy/ssh-action@v1.0.0
+        env:
+          APP_HOME: ${{ secrets.APP_HOME }}
+          APP_OWNER: ${{ secrets.APP_OWNER }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: APP_HOME,APP_OWNER,DB_NAME,SERVICE_NAME
           script: |
             # Stop execution if anything fails
             set -e
             
-            cd /home/ubuntu/BulbaBot2
+            cd $APP_HOME
             
             echo "Updating BulbaBot..."
             git pull origin master
@@ -30,21 +36,21 @@ jobs:
             npm ci
             
             echo "Dependencies installed. Backing up database..."
-            mysqldump bulbabot --no-tablespaces > backups/bulbabot_$(date +%Y-%m-%d_%H-%M-%S).sql
+            mysqldump $DB_NAME --no-tablespaces > backups/${DB_NAME}_$(date +%Y-%m-%d_%H-%M-%S).sql
             
             echo "Database backup complete. Cleaning old backups..."
-            find backups/ -name "bulbabot_*.sql" -type f -mtime +7 -delete
+            find backups/ -name "${DB_NAME}_*.sql" -type f -mtime +7 -delete
             
             echo "Old backups cleaned. Running migrations..."
             npm run db:migrate
             
             echo "Migrations complete. Ensuring ownership is correct..."
-            sudo /usr/bin/chown -R ubuntu:ubuntu /home/ubuntu/BulbaBot2
+            sudo /usr/bin/chown -R $APP_OWNER:$APP_OWNER $APP_HOME
             
             echo "File ownership changed. Deploying commands..."
             npm run deploy-commands
             
             echo "Commands deployed. Restarting..."
-            sudo /bin/systemctl restart bulbabot
+            sudo /bin/systemctl restart $SERVICE_NAME
             
             echo "Deployment complete."
