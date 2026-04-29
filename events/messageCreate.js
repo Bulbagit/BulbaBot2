@@ -8,6 +8,7 @@ import needle from "needle";
 import { Op as _Op, literal } from "sequelize";
 import config from "../config.js";
 import { Blacklist, ModLogs } from "../includes/database/index.js";
+import { getDuration } from "../includes/utils.js";
 
 const Op = _Op;
 
@@ -291,31 +292,4 @@ export async function filterMessage(message) {
       logsChannel.send({ embeds: [response] });
     }
   });
-}
-export function getDuration(arg) {
-  const measure = arg.trim().toLowerCase().slice(-1);
-  const time = parseInt(arg.trim().toLowerCase().slice(0, 1), 10);
-  let duration = 1;
-  let interval = "INTERVAL " + time.toString();
-  switch (measure) {
-    case "d":
-      interval += " DAY";
-      duration = time * 24 * 60 * 60; // d*h*m*s
-      break;
-    case "h":
-      interval += " HOUR";
-      duration = time * 60 * 60; // h*m*s
-      break;
-    case "m":
-      interval += " MINUTE";
-      duration = time * 60; // m*s
-      break;
-    case "s": // Do nothing
-      interval += " SECOND";
-      duration = time;
-      break;
-    default:
-      return false; // Don't recognize the format
-  }
-  return [duration * 1000, interval];
 }
