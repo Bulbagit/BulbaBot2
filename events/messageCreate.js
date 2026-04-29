@@ -109,7 +109,7 @@ export async function execute(message) {
 }
 export async function filterMessage(message) {
   const filters = await Blacklist.findAll();
-  if (!filters) return false; // No filters in place
+  if (!filters || filters.length === 0) return false; // No filters in place
   let actions = [];
   filters.forEach((filter) => {
     let text = message.content;

@@ -27,7 +27,7 @@ export async function execute(client, mutes, fromStartup) {
       const duration = timeToUnmute - now;
 
       if (duration <= 0) {
-        member.roles.remove(config.muteID).catch((err) => {
+        await member.roles.remove(config.muteID).catch((err) => {
           console.log(err);
         });
         await Mutes.destroy({ where: { mutedID: member.user.id } });

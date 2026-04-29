@@ -470,61 +470,43 @@ export function validateFlags(flags, options) {
   return [flags, options];
 }
 export function validateOptions(options) {
-  const validOptions = ["minimumservertime", "minimumaccountage", "warntime", "warnlimit"];
-
+  const validOptionNames = ["minimumservertime", "minimumaccountage", "warntime", "warnlimit"];
   let goodOptions = [];
   let badOptions = [];
 
-  options
-    .filter((item) => item.split(":").length === 2)
-    .forEach((option) => {
-      const optionPair = option.split(":");
-      const name = optionPair[0];
-      const value = optionPair[1];
+  const timeFormatRegex = /^\d+[smhd]$/;
 
-      if (name !== "warnlimit" && value.length !== 2) {
-        badOptions.push(name + ":" + value);
-        let index = options.indexOf(option);
-        options.splice(index, 1);
-        return;
-      }
-
-      if (validOptions.indexOf(name) === -1) {
-        badOptions.push(name + ":" + value);
-        let index = options.indexOf(option);
-        options.splice(index, 1);
-        return;
-      }
-
-      if (name !== "warnlimit") {
-        let measure = value.trim().toLowerCase().slice(-1);
-        let duration = value.trim().toLowerCase().slice(0, 1);
-        if (
-          (measure !== "s" && measure !== "m" && measure !== "h" && measure !== "d") ||
-          isNaN(duration)
-        ) {
-          badOptions.push(name + ":" + value);
-          let index = options.indexOf(option);
-          options.splice(index, 1);
-          return;
-        }
-      }
-
-      if (name === "warnlimit" && isNaN(value)) {
-        badOptions.push(name + ":" + value);
-
-        let index = options.indexOf(option);
-        options.splice(index, 1);
-
-        return;
-      }
-      goodOptions.push(option);
-    });
-  options
-    .filter((item) => item.split(":").length !== 2)
-    .forEach((option) => {
+  options.forEach((option) => {
+    const parts = option.split(":");
+    if (parts.length !== 2) {
       badOptions.push(option);
-    });
+      return;
+    }
+
+    const name = parts[0].toLowerCase();
+    const value = parts[1].toLowerCase();
+
+    if (!validOptionNames.includes(name)) {
+      badOptions.push(option); // Unrecognized option name
+      return;
+    }
+
+    if (name === "warnlimit") {
+      // warnlimit just needs to be a valid number
+      if (isNaN(value)) {
+        badOptions.push(option);
+      } else {
+        goodOptions.push(option);
+      }
+    } else {
+      // It's a time-based option, test it against our regex
+      if (!timeFormatRegex.test(value)) {
+        badOptions.push(option);
+      } else {
+        goodOptions.push(option);
+      }
+    }
+  });
 
   return [goodOptions, badOptions];
 }

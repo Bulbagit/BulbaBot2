@@ -24,7 +24,9 @@ export const data = new SlashCommandBuilder()
       .setDescription("If supplied, purge last X hours worth of messages")
       .setRequired(false)
   );
+
 export async function execute(interaction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const reason = interaction.options.getString("reason");
   let targetUser = interaction.options.getUser("user");
   const fullUser = await interaction.client.users.fetch(targetUser);
@@ -43,7 +45,7 @@ export async function execute(interaction) {
         details: `User ${interaction.user.username} attempted to ban ${fullUser.username}, giving the reason "${reason}"`,
       });
 
-      return interaction.reply({
+      return interaction.editReply({
         content:
           "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged.",
         flags: MessageFlags.Ephemeral,
@@ -51,136 +53,93 @@ export async function execute(interaction) {
     }
   }
 
-  if (fullUser.id === config.clientID)
-    return interaction.reply({
+  if (fullUser.id === config.clientID) {
+    return interaction.editReply({
       content: "I can't remove myself from the server.",
       flags: MessageFlags.Ephemeral,
     });
+  }
 
-  // Log the ban
-  await sequelize
-    .transaction(() => {
-      return ModLogs.create({
-        loggedID: fullUser.id,
-        loggerID: interaction.user.id,
-        logName: "ban",
-        message: reason,
-      });
-    })
-    .catch((err) => {
-      // Error. Log it and tell the mod it failed.
-      console.log(err);
-
-      return interaction.reply(
-        `There was an error logging to database:\n${err}\nPlease inform the bot author.`
+  try {
+    await sequelize.transaction(async (t) => {
+      await ModLogs.create(
+        {
+          loggedID: fullUser.id,
+          loggerID: interaction.user.id,
+          logName: "ban",
+          message: reason,
+        },
+        { transaction: t }
       );
     });
 
-  const message =
-    `You have been banned from ${interaction.guild.name} by a moderator. The reason provided is as follows:` +
-    `\n${reason}` +
-    `\nPlease be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`;
+    const message =
+      `You have been banned from ${interaction.guild.name} by a moderator. The reason provided is as follows:` +
+      `\n${reason}` +
+      `\nPlease be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`;
 
-  fullUser
-    .send({
-      content: message,
-    })
-    .then(() => {
-      interaction.guild.members
-        .ban(fullUser, { reason: reason, deleteMessageSeconds: purgeSeconds })
-        .then(async () => {
-          const channel = await interaction.client.channels.fetch(config.logChannel);
+    let dmFailed = false;
+    try {
+      await fullUser.send({ content: message });
+    } catch (err) {
+      console.log(`Failed to send ban DM to ${fullUser.username} (likely privacy settings).`, err);
+      dmFailed = true;
+    }
 
-          let lBanDescr = `Member @${fullUser.username} has been banned from the server by @${interaction.user.username}.`;
+    await interaction.guild.members.ban(fullUser, {
+      reason: reason,
+      deleteMessageSeconds: purgeSeconds,
+    });
 
-          if (purgeSeconds > 0) {
-            lBanDescr = lBanDescr + " (Purged messages for " + purgeHoursStr + " hour(s).)";
-          }
+    const channel = await interaction.client.channels.fetch(config.logChannel);
+    let lBanDescr = `Member <@!${fullUser.id}> (@${fullUser.username}) has been banned from the server by <@!${interaction.user.id}>.`;
 
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.memBan)
-            .setTitle("Member banned")
-            .setDescription(lBanDescr)
-            .addFields([{ name: "Reason", value: reason }])
-            .setTimestamp();
-          channel.send({ embeds: [response] });
+    if (purgeSeconds > 0) {
+      lBanDescr += `\n(Purged messages for ${purgeHoursStr} hour(s).)`;
+    }
 
-          return interaction.reply({ embeds: [response] });
-        })
-        .catch(async (err) => {
-          console.log(err);
+    const response = new EmbedBuilder()
+      .setColor(config.messageColors.memBan)
+      .setTitle("Member banned")
+      .setDescription(lBanDescr)
+      .addFields([{ name: "Reason", value: reason }])
+      .setTimestamp();
 
-          const channel = await interaction.guild.channels.fetch(config.logChannel);
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.error)
-            .setTitle("Error banning user")
-            .setDescription(
-              `An error occurred while trying to ban @${fullUser.username}. The error is displayed below.`
-            )
-            .addFields([
-              {
-                name: "Moderator",
-                value: `@${interaction.user.username}`,
-              },
-              {
-                name: "Reason",
-                value: reason,
-              },
-            ])
-            .setTimestamp();
-          channel.send({ embeds: [response] });
+    if (dmFailed) {
+      response.setFooter({
+        text: "Note: Could not DM the user about this ban (privacy settings).",
+      });
+    }
 
-          return interaction.reply("Ban unsuccessful. Check the logs for more information.");
-        });
-    })
-    .catch(async (err) => {
-      console.log(err);
-      const guild = await interaction.client.guilds.fetch(config.guildID);
-      const channel = await guild.channels.fetch(config.logChannel);
+    if (channel) {
+      await channel.send({ embeds: [response] });
+    }
+
+    return interaction.editReply({ embeds: [response] });
+  } catch (err) {
+    console.error("Error executing ban command:", err);
+
+    const channel = await interaction.guild.channels.fetch(config.logChannel).catch(() => null);
+
+    if (channel) {
       const response = new EmbedBuilder()
         .setColor(config.messageColors.error)
-        .setTitle("Message Failed")
-        .setDescription(
-          `Sending ban message to user @${fullUser.username} failed. This is likely a result of their privacy settings.`
-        )
+        .setTitle("Error processing ban")
+        .setDescription(`An error occurred while trying to process the ban for <@!${fullUser.id}>.`)
+        .addFields([
+          { name: "Moderator", value: `<@!${interaction.user.id}>` },
+          { name: "Reason", value: reason },
+          { name: "Error", value: err.message || "Check console for details." },
+        ])
         .setTimestamp();
 
-      channel.send({ embeds: [response] });
-      interaction.guild.members
-        .ban(fullUser, { reason: reason, deleteMessageSeconds: purgeSeconds })
-        .then(async () => {
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.memBan)
-            .setTitle("Member banned")
-            .setDescription(
-              `Member @${fullUser.username} has been removed from the server by @${interaction.user.username}.`
-            )
-            .addFields([{ name: "Reason", value: reason }])
-            .setTimestamp();
-          channel.send({ embeds: [response] });
+      await channel.send({ embeds: [response] });
+    }
 
-          return interaction.reply({ embeds: [response] });
-        })
-        .catch(async (err) => {
-          console.log(err);
-
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.error)
-            .setTitle("Error banning user")
-            .setDescription(
-              `An error occurred while trying to ban @${fullUser.username}. The error is displayed below.`
-            )
-            .addFields(
-              { name: "Error", value: err },
-              {
-                name: "Moderator",
-                value: `@${interaction.user.username}`,
-              }
-            )
-            .setTimestamp();
-          channel.send({ embeds: [response] });
-
-          return interaction.reply("Ban unsuccessful. Check the logs for more information.");
-        });
+    return interaction.editReply({
+      content:
+        "Ban action failed. This may be due to a database error, missing permissions, or role hierarchy. Check the logs for more information.",
+      flags: MessageFlags.Ephemeral,
     });
+  }
 }
