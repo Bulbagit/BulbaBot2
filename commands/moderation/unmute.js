@@ -41,7 +41,7 @@ export async function execute(interaction) {
         })
         .catch((err) => console.log(err));
 
-      Mutes.destroy({ where: { mutedID: user.id } })
+      await Mutes.destroy({ where: { mutedID: user.id } })
         .then(() => {
           const response = new EmbedBuilder()
             .setColor(config.messageColors.memUnmute)

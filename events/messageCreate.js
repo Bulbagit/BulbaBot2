@@ -110,8 +110,7 @@ export async function execute(message) {
 export async function filterMessage(message) {
   const filters = await Blacklist.findAll();
   if (!filters || filters.length === 0) return false; // No filters in place
-  let actions = [];
-  filters.forEach((filter) => {
+  for (const filter of filters) {
     let text = message.content;
     let flags = filter.getDataValue("flags");
     if (flags) flags = flags.split(","); // ["a", "s", "d", ...]
@@ -138,17 +137,18 @@ export async function filterMessage(message) {
       }
     }
     if (flags.indexOf("i") === -1) {
-      // Case-insensitive by default
-      flags.splice(flags.indexOf("i"), 1);
       term = term.toLowerCase();
       text = text.toLowerCase();
+    } else {
+      flags.splice(flags.indexOf("i"), 1);
     }
     if (text.includes(term)) {
+      let actions = [];
       let banned = false;
       let kicked = false;
       let warned = false;
       const filterID = filter.getDataValue("id");
-      Array.from(flags).forEach(async (flag) => {
+      for (const flag of flags) {
         switch (flag) {
           case "b": {
             actions.push("User was banned.");
@@ -159,7 +159,7 @@ export async function filterMessage(message) {
                 `${message.content}\nIf you believe you have been falsely banned, you may contact the moderators to request manual review. Please be aware that harassment directed toward` +
                 ` the moderation team may result in referral to Discord staff.\nPlease do not reply directly to this message; you will not receive a response.`,
             });
-            message.guild.members
+            await message.guild.members
               .ban(message.author, {
                 reason: "Banned automatically due to filter settings",
               })
@@ -179,7 +179,7 @@ export async function filterMessage(message) {
                 `\nIf you believe this was done in error, you may contact the moderators to request manual review. Please be aware that harassment directed toward` +
                 ` the moderation team may result in referral to Discord staff.\nPlease do not reply directly to this message; you will not receive a response.`,
             });
-            message.guild.members
+            await message.guild.members
               .kick(message.author, "Kicked automatically due to filter settings")
               .then(() => {})
               .catch((err) => {
@@ -190,7 +190,6 @@ export async function filterMessage(message) {
           case "w": {
             actions.push("Warning logged for user.");
             warned = true;
-            flags.splice(flags.indexOf("w"), 1); // Remove from the list so softban knows what to do
             await ModLogs.create({
               loggedID: message.author.id,
               loggerID: message.client.user.id,
@@ -214,7 +213,7 @@ export async function filterMessage(message) {
           }
           case "d": {
             actions.push("Message was deleted.");
-            message
+            await message
               .delete()
               .then(() => {
                 if (!banned && !warned && !kicked)
@@ -243,7 +242,7 @@ export async function filterMessage(message) {
               },
             });
             let threshold = 0;
-            if (flags.indexOf("w") !== -1) threshold += 1;
+            if (filter.getDataValue("flags").includes("w")) threshold += 1;
             threshold += parseInt(
               options.filter((option) => option.startsWith("warnlimit"))[0].split(":")[1],
               10
@@ -271,7 +270,7 @@ export async function filterMessage(message) {
             break;
           }
         }
-      });
+      }
       const responseFields = [
         {
           name: "Message",
@@ -291,5 +290,5 @@ export async function filterMessage(message) {
       const logsChannel = message.guild.channels.resolve(config.autologChannel);
       logsChannel.send({ embeds: [response] });
     }
-  });
+  }
 }
