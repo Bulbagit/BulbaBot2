@@ -1,5 +1,5 @@
 // @ts-check
-/*
+/**
  * Mute a user.
  */
 
@@ -7,8 +7,7 @@ import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } 
 import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
 import { ModLogs, Mutes } from "../../includes/database/index.js";
-import { literal } from "sequelize";
-import { canModerate, getDuration } from "../../includes/utils.js";
+import { getDuration, canModerate } from "../../includes/utils.js";
 
 export const data = new SlashCommandBuilder()
   .setName("mute")
@@ -26,141 +25,148 @@ export const data = new SlashCommandBuilder()
       .setDescription("Duration for the mute. Accepts days (d), hours (h), or minutes (m).")
       .setRequired(true)
   );
+
 export async function execute(interaction) {
-  const logsChannel = await interaction.guild.channels.fetch(config.logChannel);
-  const user = interaction.options.getUser("user");
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  const durationStr = interaction.options.getString("duration");
   const reason = interaction.options.getString("reason");
-  const member = await interaction.guild.members.fetch(user).catch((err) => console.log(err));
-  if (!canModerate(interaction.member, member)) {
-    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
-      command: "mute",
-      details: `${interaction.user.username} attempted to mute user #${user.username} with reason ${reason}`,
-    });
-    return interaction.reply({
-      content:
-        "You do not have permission to moderate this user because their role is equal to or higher than yours. This incident has been logged.",
-      flags: MessageFlags.Ephemeral,
+  const targetUser = interaction.options.getUser("user");
+  const fullUser = await interaction.client.users.fetch(targetUser);
+  const isInServer = await interaction.guild.members.fetch(targetUser).catch(() => null);
+
+  if (!isInServer) {
+    return interaction.editReply({
+      content: "The user is not in the server, so they cannot be muted.",
     });
   }
 
-  if (member.roles.cache.has(config.muteID))
-    return interaction.reply({
-      content: `This user is already muted. (User: ${member.user.username})`,
-      flags: MessageFlags.Ephemeral,
+  const member = isInServer;
+
+  if (!canModerate(interaction.member, member)) {
+    interaction.client.emit("unauthorized", interaction.client, interaction.user, {
+      command: "mute",
+      details: `User ${interaction.user.username} attempted to mute ${fullUser.username}, giving the reason "${reason}"`,
     });
-  if (member.roles.cache.has(config.muteID))
-    return interaction.reply({
-      content: `This user is already muted. (User: ${member.user.username})`,
-      flags: MessageFlags.Ephemeral,
+
+    return interaction.editReply({
+      content:
+        "The bot may not be used to perform moderation actions against other moderators or higher. This incident will be logged.",
     });
-  // Parse user input
-  const userDuration = interaction.options.getString("duration");
-  let duration = getDuration(userDuration);
-  if (!duration)
-    return interaction.reply({
+  }
+
+  if (fullUser.id === config.clientID) {
+    return interaction.editReply({
+      content: "I can't mute myself.",
+    });
+  }
+
+  if (member.roles.cache.has(config.muteID)) {
+    return interaction.editReply({
+      content: "The user is already muted.",
+    });
+  }
+
+  const durationParsed = getDuration(durationStr);
+
+  if (!durationParsed) {
+    return interaction.editReply({
       content:
         "Your format for the duration is not correct. You can specify days (d), hours (h), or minutes(m).",
-      flags: MessageFlags.Ephemeral,
     });
-  const interval = duration[1];
-  duration = duration[0];
+  }
 
-  const muted = await Mutes.findOne({ where: { mutedID: user.id } });
-  // User doesn't have the muted role, but there's a mute in the database already. Delete it to make room for the new one.
-  if (muted) await Mutes.destroy({ where: { mutedID: user.id } });
+  const duration = durationParsed[0];
+  const interval = durationParsed[1];
 
-  await member.roles.add(config.muteID, reason).catch((err) => {
-    console.log(err);
-    return interaction.reply({
-      content:
-        "There was an error while attempting the mute. Please inform the bot's administrator.",
+  const muted = await Mutes.findOne({ where: { mutedID: fullUser.id } });
+  if (muted) await Mutes.destroy({ where: { mutedID: fullUser.id } });
+  try {
+    await sequelize.transaction(async (t) => {
+      await ModLogs.create(
+        {
+          loggedID: fullUser.id,
+          loggerID: interaction.user.id,
+          logName: "mute:" + durationStr,
+          message: reason,
+        },
+        { transaction: t }
+      );
+
+      await Mutes.create(
+        {
+          mutedID: fullUser.id,
+          mutedName: fullUser.username,
+          duration: durationStr,
+          unmutedTime: sequelize.literal("DATE_ADD(NOW()," + interval + ")"),
+        },
+        { transaction: t }
+      );
     });
-  });
 
-  // Stage the unmute
-  setTimeout(() => {
-    interaction.client.emit("unmute", interaction.client, user.id, false);
-  }, duration);
+    await member.roles.add(config.muteID);
 
-  return sequelize
-    .transaction(() => {
-      return ModLogs.create({
-        loggedID: user.id,
-        loggerID: interaction.user.id,
-        logName: "mute:" + userDuration,
-        message: reason,
-      })
-        .then(() => {
-          return Mutes.create({
-            mutedID: user.id,
-            mutedName: user.username,
-            duration: userDuration,
-            unmutedTime: literal("DATE_ADD(NOW()," + interval + ")"),
-          }).catch((err) => console.log(err));
-        })
-        .catch((err) => console.log(err));
-    })
-    .then(() => {
-      // Transaction was successfully committed. Everything is A-OK.
-      user
-        .send({
-          content:
-            `You have been muted by a moderator in ${interaction.guild.name} for ${userDuration}.` +
-            ` The reason for your mute is as follows:\n${reason}\nYour mute will expire automatically after the duration has ended.` +
-            ` Please take this time to review the server rules to prevent further action against your account. Harassment of any kind toward` +
-            ` moderators may result in referral to Discord staff.\nIf your mute is not automatically lifted after the expiration, you` +
-            ` may message a moderator and request it to be manually removed.`,
-        })
-        .catch((err) => {
-          console.log(err);
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.error)
-            .setTitle("Message Failed")
-            .setDescription(
-              `Sending mute message to user @${user.username} failed. This is likely a result of their privacy settings.`
-            )
-            .setTimestamp();
-          logsChannel.send({ embeds: [response] });
-        });
-      const response = new EmbedBuilder()
-        .setColor(config.messageColors.memMute)
-        .setTitle("User Muted")
-        .setDescription(`User ${user.username} has been muted for ${userDuration}.`)
-        .setTimestamp();
-      logsChannel.send({ embeds: [response] });
-      return interaction.reply({ embeds: [response] });
-    })
-    .catch((err) => {
-      console.log(err);
-      user
-        .send({
-          content:
-            `You have been muted by a moderator in ${interaction.guild.name} for ${duration}.` +
-            ` The reason for your mute is as follows:\n${reason}\nYour mute will expire automatically after the duration has ended.` +
-            ` Please take this time to review the server rules to prevent further action against your account. Harassment of any kind toward` +
-            ` moderators may result in referral to Discord staff.\nIf your mute is not automatically lifted after the expiration, you` +
-            ` may message a moderator and request it to be manually removed.`,
-        })
-        .catch((err) => {
-          console.log(err);
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.error)
-            .setTitle("Message Failed")
-            .setDescription(
-              `Sending mute message to user @${user.username} failed. This is likely a result of their privacy settings.`
-            )
-            .setTimestamp();
-          logsChannel.send({ embeds: [response] });
-        });
-      const response = new EmbedBuilder()
-        .setColor(config.messageColors.memMute)
-        .setTitle("User Muted")
-        .setDescription(`User ${user.username} has been muted for ${userDuration}.`)
-        .setTimestamp();
-      return interaction.reply({
-        content:
-          "User successfully muted, but there was a problem logging to the database. Please inform the bot's administrator.",
-        embeds: [response],
+    const message =
+      `You have been muted in ${interaction.guild.name} by a moderator for ${durationStr}. The reason provided is as follows:` +
+      `\n${reason}` +
+      `\nIf you believe this was done in error, you may contact the moderators to request manual review. Please be aware that harassment directed at any of the moderators may result in direct referral to Discord staff.`;
+
+    let dmFailed = false;
+    try {
+      await fullUser.send({ content: message });
+    } catch {
+      console.log(`Failed to send mute DM to ${fullUser.username}.`);
+      dmFailed = true;
+    }
+
+    setTimeout(async () => {
+      interaction.client.emit("unmute", interaction.client, fullUser.id, false);
+    }, duration);
+
+    const channel = await interaction.client.channels.fetch(config.logChannel);
+    const response = new EmbedBuilder()
+      .setColor(config.messageColors.memMute)
+      .setTitle("Member muted")
+      .setDescription(
+        `Member <@!${fullUser.id}> (@${fullUser.username}) has been muted by <@!${interaction.user.id}> for ${durationStr}.`
+      )
+      .addFields([{ name: "Reason", value: reason }])
+      .setTimestamp();
+
+    if (dmFailed) {
+      response.setFooter({
+        text: "Note: Could not DM the user about this mute (privacy settings).",
       });
+    }
+
+    if (channel) {
+      await channel.send({ embeds: [response] });
+    }
+
+    return interaction.editReply({ embeds: [response] });
+  } catch (err) {
+    console.error("Error executing mute command:", err);
+
+    const channel = await interaction.guild.channels.fetch(config.logChannel).catch(() => null);
+    if (channel) {
+      const response = new EmbedBuilder()
+        .setColor(config.messageColors.error)
+        .setTitle("Error processing mute")
+        .setDescription(
+          `An error occurred while trying to process the mute for <@!${fullUser.id}>.`
+        )
+        .addFields([
+          { name: "Moderator", value: `<@!${interaction.user.id}>` },
+          { name: "Reason", value: reason },
+          { name: "Error", value: err.message || "Check console for details." },
+        ])
+        .setTimestamp();
+
+      await channel.send({ embeds: [response] });
+    }
+
+    return interaction.editReply({
+      content: "Mute action failed. This may be due to a database error or missing permissions.",
     });
+  }
 }
