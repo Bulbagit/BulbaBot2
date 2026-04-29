@@ -5,8 +5,8 @@
 
 import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
-import { Mutes, ModLogs } from "../../includes/index.js";
-import sequelize from "../../includes/database.js";
+import { Mutes, ModLogs } from "../../includes/database/index.js";
+import sequelize from "../../includes/database/database.js";
 
 export const data = new SlashCommandBuilder()
   .setName("unmute")

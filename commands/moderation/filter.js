@@ -11,7 +11,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import config from "../../config.js";
-import { Blacklist } from "../../includes/index.js";
+import { Blacklist } from "../../includes/database/index.js";
 
 export const data = new SlashCommandBuilder()
   .setName("filter")

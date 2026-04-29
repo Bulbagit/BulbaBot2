@@ -4,7 +4,7 @@
  */
 
 import { Model as _Model, BIGINT, STRING } from "sequelize";
-import sequelize from "./database.js";
+import sequelize from "../database.js";
 
 const Model = _Model;
 class Blacklist extends Model {}

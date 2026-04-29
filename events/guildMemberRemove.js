@@ -5,7 +5,7 @@
 import { EmbedBuilder, Events } from "discord.js";
 import { Op as _Op, literal } from "sequelize";
 import config from "../config.js";
-import { ModLogs } from "../includes/index.js";
+import { ModLogs } from "../includes/database/index.js";
 const Op = _Op;
 
 export const name = Events.GuildMemberRemove;

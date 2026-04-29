@@ -4,9 +4,9 @@
  */
 
 import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import sequelize from "../../includes/database.js";
+import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
-import { ModLogs, Mutes } from "../../includes/index.js";
+import { ModLogs, Mutes } from "../../includes/database/index.js";
 import { literal } from "sequelize";
 import { canModerate, getDuration } from "../../includes/utils.js";
 

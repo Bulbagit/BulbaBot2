@@ -4,9 +4,9 @@
  */
 
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
-import sequelize from "../../includes/database.js";
+import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
-import { ReportLogs } from "../../includes/index.js";
+import { ReportLogs } from "../../includes/database/index.js";
 
 export const data = new SlashCommandBuilder()
   .setName("report")

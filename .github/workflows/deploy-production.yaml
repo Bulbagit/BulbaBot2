@@ -27,6 +27,9 @@ jobs:
             # Stop execution if anything fails
             set -e
             
+            # Set environment to production
+            export NODE_ENV=production
+            
             cd $APP_HOME
             
             echo "Updating BulbaBot..."

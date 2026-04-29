@@ -3,9 +3,9 @@
  * Remove a user from the server and prevent them from re-joining.
  */
 import { EmbedBuilder, SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from "discord.js";
-import sequelize from "../../includes/database.js";
+import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
-import { ModLogs } from "../../includes/index.js";
+import { ModLogs } from "../../includes/database/index.js";
 import { canModerate } from "../../includes/utils.js";
 
 export const data = new SlashCommandBuilder()

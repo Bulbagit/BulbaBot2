@@ -5,7 +5,7 @@
 
 import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
 import config from "../../config.js";
-import { Mutes } from "../../includes/index.js";
+import { Mutes } from "../../includes/database/index.js";
 
 export const data = new SlashCommandBuilder()
   .setName("listmutes")

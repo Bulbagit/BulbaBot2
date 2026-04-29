@@ -12,7 +12,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import config from "../../config.js";
-import { ModLogs } from "../../includes/index.js";
+import { ModLogs } from "../../includes/database/index.js";
 
 export const data = new SlashCommandBuilder()
   .setName("clearwarn")

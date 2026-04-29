@@ -3,7 +3,7 @@
  * Contains replies to reports and subsequent conversations between mod and user.
  */
 import { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
-import sequelize from "./database.js";
+import sequelize from "../database.js";
 
 class ReportReplies extends _Model {}
 

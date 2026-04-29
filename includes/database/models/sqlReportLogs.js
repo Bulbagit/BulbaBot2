@@ -1,14 +1,13 @@
 // @ts-check
 /*
- * Contains the sequelize class for the moderation logs table.
+ * Contains the sequelize class for the reports table.
  */
 
 import { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
-import sequelize from "./database.js";
+import sequelize from "../database.js";
 
-const Model = _Model;
-class ModLogs extends Model {}
-ModLogs.init(
+class ReportLogs extends _Model {}
+ReportLogs.init(
   {
     id: {
       type: BIGINT(20),
@@ -16,46 +15,38 @@ ModLogs.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    loggedID: {
+    reporterID: {
       type: BIGINT(20),
       allowNull: false,
     },
-    loggerID: {
+    reportedID: {
       type: BIGINT(20),
-      allowNull: false,
-    } /* Not functional yet
-    loggedNick: {
-        type: Sequelize.STRING,
-        allowNull: false
-    },
-    loggedUsername: {
-        type: Sequelize.STRING,
-        allowNull: false
-    },*/,
-    logName: {
-      type: TEXT,
       allowNull: false,
     },
     message: {
       type: TEXT,
       allowNull: false,
     },
-    logTime: {
+    channel: {
+      type: BIGINT(20),
+      allowNull: false,
+    },
+    time: {
       type: DATE,
+      allowNull: false,
       defaultValue: literal("CURRENT_TIMESTAMP"),
     },
   },
   {
     sequelize,
-    modelName: "modlogs",
+    modelName: "reportlogs",
     // Sequelize will pluralize table names by default
     // For consistency, we stop this behavior
     freezeTableName: true,
     // If this is set to true (default),
     // Sequelize will create columns for time created, time updated, etc.
-    // We store the log time already, so this is set to false.
     timestamps: false,
   }
 );
 
-export default ModLogs;
+export default ReportLogs;

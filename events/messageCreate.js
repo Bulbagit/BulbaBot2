@@ -7,7 +7,7 @@ import { EmbedBuilder, Events, PermissionFlagsBits } from "discord.js";
 import needle from "needle";
 import { Op as _Op, literal } from "sequelize";
 import config from "../config.js";
-import { Blacklist, ModLogs } from "../includes/index.js";
+import { Blacklist, ModLogs } from "../includes/database/index.js";
 
 const Op = _Op;
 

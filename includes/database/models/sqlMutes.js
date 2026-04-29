@@ -5,7 +5,7 @@
  */
 
 import { Model as _Model, BIGINT, DATE, literal, TEXT } from "sequelize";
-import sequelize from "./database.js";
+import sequelize from "../database.js";
 
 class Mutes extends _Model {}
 Mutes.init(
