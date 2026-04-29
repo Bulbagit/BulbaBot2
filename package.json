@@ -20,7 +20,8 @@
     "discord.js": "^14.25.1",
     "mysql2": "^3.2.0",
     "needle": "^3.3.1",
-    "sequelize": "^6.37.8"
+    "sequelize": "^6.37.8",
+    "sequelize-cli": "^6.6.5"
   },
   "overrides": {
     "sequelize": {
@@ -37,7 +38,6 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.5.0",
-    "prettier": "^3.7.4",
-    "sequelize-cli": "^6.6.5"
+    "prettier": "^3.7.4"
   }
 }
