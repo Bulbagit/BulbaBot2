@@ -4,7 +4,6 @@
  */
 
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder } from "discord.js";
-import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
 import { ReportLogs } from "../../includes/database/index.js";
 
@@ -26,68 +25,66 @@ export const data = new SlashCommandBuilder()
       .setDescription("The channel in which the incident occurred.")
       .setRequired(true)
   );
+
 export async function execute(interaction) {
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const reportedUser = interaction.options.getUser("user");
   const reason = interaction.options.getString("reason");
   const channel = interaction.options.getChannel("channel");
   const reportsChannel = await interaction.guild.channels.fetch(config.reportChannel);
   const reportingUser = interaction.user;
 
-  return sequelize
-    .transaction(() => {
-      return ReportLogs.create({
-        reportedID: reportedUser.id,
-        reporterID: reportingUser.id,
-        message: reason,
-        channel: channel.id,
-      }).catch((err) => console.log(err));
-    })
-    .then((report) => {
-      const response = new EmbedBuilder()
-        .setTitle("New Report")
-        .setDescription(`Report made against user ${reportedUser.username}`)
-        .setThumbnail(reportedUser.avatarURL())
-        .addFields(
-          {
-            name: "User (ID)",
-            value: `${reportedUser} (${reportedUser.id})`,
-          },
-          { name: "Message", value: reason },
-          { name: "Channel", value: channel.toString() }
-        )
-        .setFooter({ text: `Report ID: #${report.id}` })
-        .setTimestamp();
-      reportsChannel.send({ embeds: [response] });
-      interaction.reply({
-        content: "Your report has been submitted for review.",
-        flags: MessageFlags.Ephemeral,
-      });
-    })
-    .catch((err) => {
-      console.log(err);
-      const response = new EmbedBuilder()
-        .setTitle("New Report")
-        .setDescription(`Report made against user ${reportedUser.username}`)
-        .setThumbnail(reportedUser.avatarURL())
-        .addFields(
-          {
-            name: "User (ID)",
-            value: `${reportedUser} (${reportedUser.id})`,
-          },
-          { name: "Message", value: reason },
-          { name: "Channel", value: channel.toString() },
-          {
-            name: "Warning!",
-            value:
-              "This report was not logged to the database due to an error. Please contact the bot's administrator.",
-          }
-        )
-        .setFooter({ text: "Report ID: N/A (Database error)" })
-        .setTimestamp();
-      reportsChannel.send({ embeds: [response] });
-      interaction.reply({
-        content: "Your report has been submitted for review.",
-        flags: MessageFlags.Ephemeral,
-      });
+  let report;
+  let dbFailed = false;
+
+  try {
+    // Try to log the report
+    report = await ReportLogs.create({
+      reportedID: reportedUser.id,
+      reporterID: reportingUser.id,
+      message: reason,
+      channel: channel.id,
     });
+  } catch (err) {
+    console.log(err);
+    dbFailed = true;
+  }
+
+  try {
+    // Send a message to the mods.
+    const response = new EmbedBuilder()
+      .setTitle("New Report")
+      .setDescription(`Report made against user ${reportedUser.username}`)
+      .setThumbnail(reportedUser.displayAvatarURL())
+      .addFields(
+        {
+          name: "User (ID)",
+          value: `${reportedUser} (${reportedUser.id})`,
+        },
+        { name: "Message", value: reason },
+        { name: "Channel", value: channel.toString() }
+      )
+      .setTimestamp();
+
+    if (dbFailed) {
+      // We don't need to abort; just warn the moderators it didn't log
+      response.addFields({
+        name: "Warning!",
+        value:
+          "This report was not logged to the database due to an error. Please contact the bot's administrator.",
+      });
+      response.setFooter({ text: "Report ID: N/A (Database error)" });
+    } else {
+      response.setFooter({ text: `Report ID: #${report.id}` });
+    }
+    await reportsChannel.send({ embeds: [response] });
+  } catch (err) {
+    console.log(err);
+    // This is bad; report failed to deliver. Warn the user so they are aware.
+    return interaction.editReply({
+      content: "Your report was not delivered due to an error. Please notify a moderator.",
+    });
+  }
+
+  return interaction.editReply({ content: "Your report has been submitted for review." });
 }
