@@ -3,7 +3,6 @@
  * Lift a ban from a user.
  */
 import { EmbedBuilder, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
-import sequelize from "../../includes/database/database.js";
 import config from "../../config.js";
 import { ModLogs } from "../../includes/database/index.js";
 
@@ -18,87 +17,62 @@ export const data = new SlashCommandBuilder()
     reason.setName("reason").setDescription("Reason for lifting the ban.").setRequired(true)
   );
 export async function execute(interaction) {
+  const logsChannel = await interaction.guild.channels.fetch(config.logChannel);
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const userID = interaction.options.getString("user");
-  const user = await interaction.client.users.fetch(userID);
-  if (!user)
-    return interaction.reply({
-      content: `No user found with ID ${userID}.`,
-      flags: MessageFlags.Ephemeral,
-    });
+  let user;
+  try {
+    user = await interaction.client.users.fetch(userID);
+  } catch (err) {
+    console.log(err);
+    return interaction.editReply({ content: `No user found with ID ${userID}.` });
+  }
+
   const reason = interaction.options.getString("reason");
+  const warnings = [];
+  let dmFailed = false;
 
-  await sequelize
-    .transaction(() => {
-      return ModLogs.create({
-        loggedID: user.id,
-        loggerID: interaction.user.id,
-        logName: "unban",
-        message: reason,
-      });
-    })
-    .catch((err) => {
-      // Error. Log it and tell the mod it failed.
-      console.log(err);
-      return interaction.channel.send(
-        `There was an error logging to database. Please inform the bot administrator.`
-      );
+  try {
+    await interaction.guild.members.unban(user, reason);
+  } catch (err) {
+    console.log(err);
+    return interaction.editReply({ content: "There was an error lifting this user's ban." });
+  }
+  try {
+    await ModLogs.create({
+      loggedID: user.id,
+      loggerID: interaction.user.id,
+      logName: "unban",
+      message: reason,
     });
+  } catch (err) {
+    console.log(err);
+    warnings.push("Failed to log this event in the database.");
+  }
+  try {
+    const message =
+      `Your ban in ${interaction.guild.name} has been lifted by a moderator. The reason provided is as follows:` +
+      `\n${reason}` +
+      `\nYou may now rejoin the server if you like. Please read the rules carefully to avoid any further incidents.`;
+    await user.send({ content: message });
+  } catch (err) {
+    console.log(err);
+    dmFailed = true;
+  }
 
-  interaction.guild.members
-    .unban(user, reason)
-    .then(async () => {
-      // Unban successful
-      const message =
-        `Your ban in ${interaction.guild.name} has been lifted by a moderator. The reason provided is as follows:` +
-        `\n${reason}` +
-        `\nYou may now rejoin the server if you like. Please read the rules carefully to avoid any further incidents.`;
-      user
-        .send({
-          content: message,
-        })
-        .catch(async (err) => {
-          // Failed to message the user
-          console.log(err);
-          const guild = await interaction.client.guilds.fetch(config.guildID);
-          const channel = await guild.channels.fetch(config.logChannel);
-          const response = new EmbedBuilder()
-            .setColor(config.messageColors.error)
-            .setTitle("Message Failed")
-            .setDescription(
-              `Sending unban message to user ${user.username} failed. This is likely a result of their privacy settings.`
-            )
-            .setTimestamp();
-
-          channel.send({ embeds: [response] });
-        });
-      const channel = await interaction.client.channels.fetch(config.logChannel);
-      const response = new EmbedBuilder()
-        .setColor(config.messageColors.memUnban)
-        .setTitle("Member unbanned")
-        .setDescription(
-          `User ${user.username} has been unbanned from the server by @${interaction.user.username}.`
-        )
-        .addFields([{ name: "Reason", value: reason }])
-        .setTimestamp();
-      channel.send({ embeds: [response] });
-      return interaction.reply({ embeds: [response] });
-    })
-    .catch(async (err) => {
-      // Unban failed
-      console.log(err);
-      const channel = await interaction.guild.channels.fetch(config.logChannel);
-      const response = new EmbedBuilder()
-        .setColor(config.messageColors.error)
-        .setTitle("Error unbanning user")
-        .setDescription(
-          `An error occurred while trying to unban ${user.username}. The error is displayed below.`
-        )
-        .addFields([
-          { name: "Moderator", value: `${interaction.user.username}` },
-          { name: "Reason", value: reason },
-        ])
-        .setTimestamp();
-      channel.send({ embeds: [response] });
-      return interaction.reply("Unban unsuccessful. Check the logs for more information.");
+  // Success messages
+  const response = new EmbedBuilder()
+    .setColor(config.messageColors.memUnban)
+    .setTitle("Member Unbanned")
+    .setDescription(`User ${user.username} was manually unbanned by ${interaction.user.username}`)
+    .addFields([{ name: "Reason", value: reason }])
+    .setTimestamp();
+  if (dmFailed) response.setFooter({ text: "Note: Could not DM user." });
+  if (warnings.length) response.addFields({ name: "Warnings", value: warnings.join("\n") });
+  await logsChannel.send({ embeds: [response] });
+  if (warnings.length)
+    return interaction.editReply({
+      content: `${user.username} has been unbanned, but there were errors. Check the logs channel for more information.`,
     });
+  return interaction.editReply({ content: `${user.username} has been unbanned successfully.` });
 }
