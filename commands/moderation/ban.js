@@ -12,11 +12,11 @@ export const data = new SlashCommandBuilder()
   .setName("ban")
   .setDescription("Remove a user from the server and prevent them from re-joining.")
   .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
-  .addStringOption((reason) =>
-    reason.setName("reason").setDescription("Reason for ban.").setRequired(true)
-  )
   .addUserOption((user) =>
     user.setName("user").setDescription("The offending user or their ID").setRequired(true)
+  )
+  .addStringOption((reason) =>
+    reason.setName("reason").setDescription("Reason for ban.").setRequired(true)
   )
   .addStringOption((purgehours) =>
     purgehours
