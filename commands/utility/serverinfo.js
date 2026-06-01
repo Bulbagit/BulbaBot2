@@ -3,7 +3,7 @@
  * Outputs general server information
  */
 
-import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder, ChannelType } from "discord.js";
 import config from "../../config.js";
 
 export const data = new SlashCommandBuilder()
@@ -19,7 +19,7 @@ export async function execute(interaction) {
   roles = roles.join(", ").trim();
   let categories = [];
   interaction.guild.channels.cache
-    .filter((channel) => channel.type === 4)
+    .filter((channel) => channel.type === ChannelType.GuildCategory)
     .forEach((channel) => categories.push(channel.name));
   categories = categories.join(", ").trim();
   const owner = await interaction.guild.members.fetch(interaction.guild.ownerId);
@@ -39,14 +39,14 @@ export async function execute(interaction) {
       {
         name: "Text Channels",
         value: interaction.guild.channels.cache
-          .filter((channel) => channel.type === "text")
+          .filter((channel) => channel.type === ChannelType.GuildText)
           .size.toString(),
         inline: true,
       },
       {
         name: "Voice Channels",
         value: interaction.guild.channels.cache
-          .filter((channel) => channel.type === "voice")
+          .filter((channel) => channel.type === ChannelType.GuildVoice)
           .size.toString(),
         inline: true,
       },
@@ -61,7 +61,7 @@ export async function execute(interaction) {
       {
         name: "Amount of Categories",
         value: interaction.guild.channels.cache
-          .filter((channel) => channel.type === 4)
+          .filter((channel) => channel.type === ChannelType.GuildCategory)
           .size.toString(),
         inline: true,
       },
