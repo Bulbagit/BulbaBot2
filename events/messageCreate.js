@@ -247,7 +247,7 @@ export async function filterMessage(message) {
               options.filter((option) => option.startsWith("warnlimit"))[0].split(":")[1],
               10
             );
-            if (warnings === threshold) {
+            if (warnings >= threshold) {
               actions.push("User was automatically banned due to an accumulation of warnings.");
               await message.author.send({
                 content:
