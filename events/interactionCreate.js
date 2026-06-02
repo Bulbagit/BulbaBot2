@@ -1,7 +1,7 @@
 /**
  * Stock event handler for responding to and executing commands.
  */
-import { Events } from "discord.js";
+import { Events, MessageFlags } from "discord.js";
 
 export const name = Events.InteractionCreate;
 export async function execute(interaction) {
@@ -17,7 +17,15 @@ export async function execute(interaction) {
   try {
     await command.execute(interaction);
   } catch (error) {
-    console.error(`Error executing ${interaction.commandName}`);
     console.error(error);
+    const errorMessage = {
+      content: "There was an error while executing this command.",
+      flags: MessageFlags.Ephemeral,
+    };
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply(errorMessage).catch(() => {});
+    } else {
+      await interaction.reply(errorMessage).catch(() => {});
+    }
   }
 }
