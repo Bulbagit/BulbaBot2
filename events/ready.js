@@ -1,10 +1,11 @@
 // @ts-check
 /**
- * Event handler for logging bot start time.
+ * Event handler that runs when the bot restarts.
+ * Also starts our sweepMutes job.
  */
 import { EmbedBuilder, Events } from "discord.js";
 import config from "../config.js";
-import { Mutes } from "../includes/database/index.js";
+import { sweepMutes } from "../includes/mutes.js";
 
 export const name = Events.ClientReady;
 export const once = true;
@@ -19,10 +20,12 @@ export async function execute(client) {
       client.user.username
     }`
   );
-  const mutes = await Mutes.findAll();
-  if (mutes.length) {
-    client.emit("unmute", client, mutes, true);
-  }
+
+  // Check for stuck mutes
+  await sweepMutes(client);
+  // And then set up our database sweep job to persistently check each minute
+  setInterval(sweepMutes, 60000, client);
+
   const restarted = new EmbedBuilder()
     .setTitle("Bot restarted")
     .setDescription(
