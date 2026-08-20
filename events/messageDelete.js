@@ -15,9 +15,7 @@ export async function execute(message) {
   )
     return; // This is already handled by the message listener.
   if (!message.content && message.embeds.length) {
-    let title = "";
-    if (!message.embeds[0].title) title = message.embeds[0].author.name;
-    else title = message.embeds[0].title;
+    const title = message.embeds[0].title || message.embeds[0].author?.name || "*No title*";
     const response = new EmbedBuilder()
       .setColor(config.messageColors.messageDelete)
       .setTitle(`Message Deleted by ${message.author.username}`)
@@ -26,7 +24,7 @@ export async function execute(message) {
       .addFields([
         { name: `Message in ${message.channel.toString()}`, value: "(Embed)" },
         { name: "Embed Title", value: title },
-        { name: "Embed Text", value: message.embeds[0].description },
+        { name: "Embed Text", value: message.embeds[0].description || "*No description*" },
       ])
       .setFooter({ text: "ID: " + message.author.id })
       .setTimestamp();
