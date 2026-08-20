@@ -24,7 +24,7 @@ export async function execute(client) {
   // Check for stuck mutes
   await sweepMutes(client);
   // And then set up our database sweep job to persistently check each minute
-  setInterval(sweepMutes, 60000, client);
+  setInterval(sweepMutes, 30000, client);
 
   const restarted = new EmbedBuilder()
     .setTitle("Bot restarted")
