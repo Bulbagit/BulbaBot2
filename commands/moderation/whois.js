@@ -20,23 +20,6 @@ export async function execute(interaction) {
     console.log(err);
   });
 
-  let status = [];
-  let game = [];
-  if (member && member.presence && member.presence.activities) {
-    const customStatus = member.presence.activities.find((act) => act.name === "Custom Status");
-    const playing = member.presence.activities.find((act) => act.name === "Playing");
-    if (customStatus && playing) {
-      status.push(customStatus.state);
-      game.push(playing.name);
-    } else if (playing && !customStatus) {
-      status.push("Playing");
-      game.push(playing.name);
-    } else if (customStatus && !playing) {
-      status.push(customStatus.state);
-    } else status.push(member.presence.status);
-    if (!status.length) status.push("N/A");
-    if (!game?.length) game.push("None");
-  }
   let rolesField = { name: "Roles", value: "Not in server", inline: false };
 
   if (member) {
@@ -57,16 +40,6 @@ export async function execute(interaction) {
       {
         name: "Nickname",
         value: member && member.nickname ? member.nickname : "None set or not in server",
-        inline: true,
-      },
-      {
-        name: "Status",
-        value: status.length !== 0 ? status[0] : "None",
-        inline: true,
-      },
-      {
-        name: "Game",
-        value: game.length !== 0 ? game[0] : "None",
         inline: true,
       },
       {
