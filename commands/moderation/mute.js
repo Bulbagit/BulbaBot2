@@ -76,7 +76,6 @@ export async function execute(interaction) {
     });
   }
 
-  const duration = durationParsed[0];
   const interval = durationParsed[1];
 
   const muted = await Mutes.findOne({ where: { mutedID: fullUser.id } });
@@ -118,10 +117,6 @@ export async function execute(interaction) {
       console.log(`Failed to send mute DM to ${fullUser.username}.`);
       dmFailed = true;
     }
-
-    setTimeout(async () => {
-      interaction.client.emit("unmute", interaction.client, fullUser.id, false);
-    }, duration);
 
     const channel = await interaction.client.channels.fetch(config.logChannel);
     const response = new EmbedBuilder()
